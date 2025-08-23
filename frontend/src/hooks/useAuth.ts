@@ -12,8 +12,14 @@ export function useAuth() {
   useEffect(() => {
     dispatch(setLoading())
     return watchAuth((u) => {
-      dispatch(setUser(u))
-      if (u) ensureUserProfile(u).catch(() => {})
+      // convert firebase User to a small serializable shape
+      if (u) {
+        const small = { uid: u.uid, email: u.email ?? null, displayName: u.displayName ?? null, photoURL: u.photoURL ?? null }
+        dispatch(setUser(small))
+        ensureUserProfile(u).catch(() => {})
+      } else {
+        dispatch(setUser(null))
+      }
     })
   }, [dispatch])
   // wrap the raw firebase calls so we can show toast notifications on success/failure

@@ -1,5 +1,3 @@
-export type Role = 'owner' | 'viewer'
-
 export interface Flashcard {
   id: string
   front: string
@@ -20,7 +18,8 @@ export interface Library {
   name: string
   description?: string
   ownerId: string
-  share: Record<string, Exclude<Role, 'owner'>> // uid -> role
+  // list of user ids (excluding the owner) who the library is shared with
+  share: string[]
   createdAt: number
   updatedAt: number
   cardCount?: number

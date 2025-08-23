@@ -28,8 +28,11 @@ export default function StudyPage() {
   useEffect(() => { if (libId) localStorage.setItem('study.lib', libId) }, [libId])
 
   // thẻ của thư viện đang chọn
-  const cards = useSelector((s: RootState) => (libId ? (s.cards.byLib[libId] ?? []) : []))
+  // Return undefined from the selector when no lib is selected so we don't create
+  // a new empty array reference on each render (which causes useSelector warnings).
+  const selectedCards = useSelector((s: RootState) => (libId ? s.cards.byLib[libId] : undefined))
   useEffect(() => { if (libId) dispatch(fetchCards(libId)) }, [dispatch, libId])
+  const cards = useMemo(() => selectedCards ?? [], [selectedCards])
 
   const dueNow = useMemo(() => {
     const now = Date.now()
@@ -70,7 +73,7 @@ export default function StudyPage() {
           </div>
         </>
       ) : (
-        <div>Không còn thẻ đến hạn. Tuyệt!</div>
+        <P>Không còn thẻ đến hạn. Tuyệt!</P>
       )}
     </div>
   )

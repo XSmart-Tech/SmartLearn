@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
-import { collection, addDoc, doc, updateDoc, deleteDoc, query, where, type DocumentData } from 'firebase/firestore'
+import { collection, addDoc, doc, updateDoc, deleteDoc, query, where, arrayUnion, type DocumentData } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import type { Library } from '@/lib/types'
 import { getDocsCacheFirst, getDocCacheFirst } from '@/lib/firestoreCache'
@@ -7,9 +7,8 @@ import { getDocsCacheFirst, getDocCacheFirst } from '@/lib/firestoreCache'
 export const fetchLibraries = createAsyncThunk('libraries/fetch', async (uid: string) => {
   // Fetch libraries owned by the user
   const ownerQ = query(collection(db, 'libraries'), where('ownerId', '==', uid))
-  // Fetch libraries explicitly shared with the user (role viewer)
-  // Use a field path like `share.<uid>` to query the map field
-  const sharedQ = query(collection(db, 'libraries'), where(`share.${uid}`, '==', 'viewer'))
+  // Fetch libraries explicitly shared with the user (share is an array of uids)
+  const sharedQ = query(collection(db, 'libraries'), where('share', 'array-contains', uid))
 
   // Run both cache-first queries in parallel
   const [ownerRes, sharedRes] = await Promise.all([getDocsCacheFirst(ownerQ), getDocsCacheFirst(sharedQ)])
@@ -40,11 +39,11 @@ export const createLibrary = createAsyncThunk('libraries/create', async (payload
     name: payload.name,
     description: payload.description ?? '',
     ownerId: payload.uid,
-    share: {},
+    share: [],
     createdAt: now,
     updatedAt: now,
   })
-  return { id: ref.id, name: payload.name, description: payload.description ?? '', ownerId: payload.uid, share: {}, createdAt: now, updatedAt: now } as Library
+  return { id: ref.id, name: payload.name, description: payload.description ?? '', ownerId: payload.uid, share: [], createdAt: now, updatedAt: now } as Library
 })
 
 export const updateLibrary = createAsyncThunk('libraries/update', async (payload: { id: string; patch: Partial<Library> }) => {
@@ -58,9 +57,10 @@ export const removeLibrary = createAsyncThunk('libraries/remove', async (id: str
   return id
 })
 
-export const setShareRole = createAsyncThunk('libraries/share', async (payload: { id: string; uid: string; role: 'viewer' }) => {
+export const setShareRole = createAsyncThunk('libraries/share', async (payload: { id: string; uid: string }) => {
   const ref = doc(db, 'libraries', payload.id)
-  await updateDoc(ref, { [`share.${payload.uid}`]: payload.role, updatedAt: Date.now() })
+  // add uid to the share array
+  await updateDoc(ref, { share: arrayUnion(payload.uid), updatedAt: Date.now() })
   return payload
 })
 
@@ -85,7 +85,7 @@ const slice = createSlice({
     b.addCase(createLibrary.fulfilled, (s, a) => { s.items[a.payload.id] = a.payload; s.order.unshift(a.payload.id) })
     b.addCase(updateLibrary.fulfilled, (s, a) => { const t = s.items[a.payload.id]; if (t) Object.assign(t, a.payload.patch) })
     b.addCase(removeLibrary.fulfilled, (s, a) => { delete s.items[a.payload]; s.order = s.order.filter(id => id !== a.payload) })
-    b.addCase(setShareRole.fulfilled, (s, a) => { const t = s.items[a.payload.id]; if (t) { t.share[a.payload.uid] = a.payload.role } })
+  b.addCase(setShareRole.fulfilled, (s, a) => { const t = s.items[a.payload.id]; if (t) { if (!Array.isArray(t.share)) t.share = []; if (!t.share.includes(a.payload.uid)) t.share.push(a.payload.uid) } })
   }
 })
 

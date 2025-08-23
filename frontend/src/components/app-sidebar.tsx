@@ -168,11 +168,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   }
 
   return (
-    <Sidebar collapsible="icon" className="sidebar-gradient border-sidebar-ring" {...props}>
+    <Sidebar collapsible="icon" {...props}>
       <SidebarHeader className="px-3 py-4">
-        <div className="flex items-center justify-between gap-2">
-          <TeamSwitcher teams={data.teams} />
-        </div>
+        <TeamSwitcher teams={data.teams} />
       </SidebarHeader>
       <SidebarContent className="space-y-2 px-2 py-3">
         <NavMain items={data.navMain} />

@@ -1,14 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
 import type { RootState, AppDispatch } from '@/store'
 import { createLibrary, fetchLibraries, removeLibrary } from '@/store/librariesSlice'
 import { Button, Input, Small, Large } from '@/components/ui'
+import type { Library } from '@/lib/types'
 
 export default function LibraryList() {
   const dispatch = useDispatch<AppDispatch>()
   const { user } = useSelector((s: RootState) => s.auth)
-  const libs = useSelector((s: RootState) => s.libraries.order.map(id => s.libraries.items[id]))
+  const order = useSelector((s: RootState) => s.libraries.order)
+  const items = useSelector((s: RootState) => s.libraries.items)
+  const libs: Library[] = useMemo(() => order.map(id => items[id]).filter(Boolean) as Library[], [order, items])
   const [name, setName] = useState('')
 
   useEffect(() => { if (user?.uid) dispatch(fetchLibraries(user.uid)) }, [dispatch, user?.uid])
@@ -40,7 +43,7 @@ export default function LibraryList() {
             </div>
           </li>
         ))}
-  {libs.length === 0 && <li><Small className="text-gray-500">Chưa có thư viện nào.</Small></li>}
+        {libs.length === 0 && <li><Small className="text-gray-500">Chưa có thư viện nào.</Small></li>}
       </ul>
     </section>
   )

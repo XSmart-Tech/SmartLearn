@@ -12,7 +12,8 @@ export default function QuizPage() {
 
   const order = useSelector((s: RootState) => s.libraries.order)
   const libMap = useSelector((s: RootState) => s.libraries.items)
-  const libs = order.map(id => libMap[id]).filter(Boolean)
+  // memoize derived libs array so selector doesn't return a new reference each render
+  const libs = useMemo(() => order.map(id => libMap[id]).filter(Boolean), [order, libMap])
 
   useEffect(() => { if (user?.uid && order.length === 0) dispatch(fetchLibraries(user.uid)) }, [dispatch, user?.uid, order.length])
 
@@ -23,7 +24,11 @@ export default function QuizPage() {
   }, [order, libId])
   useEffect(() => { if (libId) localStorage.setItem('quiz.lib', libId) }, [libId])
 
-  const cards = useSelector((s: RootState) => (libId ? (s.cards.byLib[libId] ?? []) : []))
+  // cards for the selected library
+  // Return undefined from the selector when no lib is selected so we don't create
+  // a new empty array reference on each render (avoids useSelector warnings).
+  const selectedCards = useSelector((s: RootState) => (libId ? s.cards.byLib[libId] : undefined))
+  const cards = useMemo(() => selectedCards ?? [], [selectedCards])
   useEffect(() => { if (libId) dispatch(fetchCards(libId)) }, [dispatch, libId])
 
   const [i, setI] = useState(0)
@@ -120,14 +125,14 @@ export default function QuizPage() {
       {!started ? (
         <div className="space-y-3 p-4 rounded-xl border">
           <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600">Thư viện:</label>
+            <Small>Thư viện:</Small>
             <select value={libId} onChange={(e) => { setI(0); setShow(false); setLibId(e.target.value) }} className="rounded-xl border px-2 py-1 text-sm">
               {libs.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
             </select>
           </div>
 
           <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600">Chế độ quiz:</label>
+            <Small>Chế độ quiz:</Small>
             <select value={mode} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => { setMode(e.target.value as 'mcq' | 'fill' | 'both'); setMcqResult(null); setFillResult(null); setInput(''); setShow(false) }} className="rounded-xl border px-2 py-1 text-sm">
               <option value="mcq">Trắc nghiệm</option>
               <option value="fill">Điền</option>
@@ -136,9 +141,9 @@ export default function QuizPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600">Số câu:</label>
+            <Small>Số câu:</Small>
             <input type="number" min={1} value={count} onChange={(e) => setCount(Math.max(1, Number(e.target.value) || 1))} className="w-24 rounded-xl border px-2 py-1 text-sm" />
-            <div className="text-sm text-gray-500">Thẻ trong thư viện: {cards.length}</div>
+            <Small className="text-gray-500">Thẻ trong thư viện: {cards.length}</Small>
             <div className="flex-0">
               <Button onClick={() => {
                 // start quiz: shuffle and take subset
@@ -163,7 +168,7 @@ export default function QuizPage() {
         </div>
       ) : (
         <div className="flex items-center gap-2">
-          <div className="text-sm text-gray-600">Đang làm quiz — {i+1}/{quizCards.length}</div>
+          <Small>Đang làm quiz — {i+1}/{quizCards.length}</Small>
           <div className="ml-auto flex gap-2">
             <Button variant="secondary" onClick={() => {
               // restart

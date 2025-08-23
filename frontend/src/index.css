@@ -89,7 +89,7 @@
   --sidebar-accent-foreground: oklch(0.15 0.03 260);
   --sidebar-border: oklch(0.92 0.015 260);
   --sidebar-ring: oklch(0.58 0.22 260);
-  
+
   /* Icon colors for sidebar - vibrant colors */
   --icon-home: oklch(0.65 0.25 280);
   --icon-flashcard: oklch(0.6 0.22 200);
@@ -142,7 +142,7 @@
   --sidebar-accent-foreground: oklch(0.9 0.012 260);
   --sidebar-border: oklch(0.2 0.028 260);
   --sidebar-ring: oklch(0.75 0.22 260);
-  
+
   /* Icon colors for dark theme - brighter colors */
   --icon-home: oklch(0.8 0.25 280);
   --icon-flashcard: oklch(0.72 0.22 200);
@@ -159,16 +159,16 @@
   * {
     @apply border-border outline-ring/50;
   }
-  
+
   html {
     scroll-behavior: smooth;
   }
-  
+
   body {
     @apply bg-background text-foreground;
     background: var(--background);
   }
-  
+
   /* Colorful icon classes */
   .icon-home { color: var(--icon-home) !important; }
   .icon-flashcard { color: var(--icon-flashcard) !important; }
@@ -179,17 +179,17 @@
   .icon-chart { color: var(--icon-chart) !important; }
   .icon-user { color: var(--icon-user) !important; }
   .icon-settings { color: var(--icon-settings) !important; }
-  
+
   /* Icon hover effects */
   .icon-animated {
     transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
   }
-  
+
   .icon-animated:hover {
     transform: scale(1.1);
     filter: brightness(1.2) saturate(1.3);
   }
-  
+
   /* Gradient background effects */
   .gradient-bg {
     background: linear-gradient(135deg, 
@@ -197,28 +197,28 @@
       oklch(0.995 0.005 240) 50%, 
       oklch(0.985 0.008 300) 100%);
   }
-  
+
   .dark .gradient-bg {
     background: linear-gradient(135deg, 
       oklch(0.06 0.02 280) 0%, 
       oklch(0.08 0.018 260) 50%, 
       oklch(0.05 0.025 300) 100%);
   }
-  
+
   .card-gradient {
     background: linear-gradient(135deg, 
       oklch(1.0 0.0 0) 0%, 
       oklch(0.995 0.005 280) 100%);
     border: 1px solid oklch(0.9 0.018 260);
   }
-  
+
   .dark .card-gradient {
     background: linear-gradient(135deg, 
       oklch(0.1 0.025 280) 0%, 
       oklch(0.12 0.025 260) 100%);
     border: 1px solid oklch(0.22 0.028 260);
   }
-  
+
   /* Enhanced sidebar styling */
   .sidebar-gradient {
     background: linear-gradient(135deg, 
@@ -228,7 +228,7 @@
     backdrop-filter: blur(10px);
     border-right: 1px solid oklch(0.92 0.015 260);
   }
-  
+
   .dark .sidebar-gradient {
     background: linear-gradient(135deg, 
       oklch(0.08 0.025 280) 0%, 
@@ -236,84 +236,84 @@
       oklch(0.06 0.03 240) 100%);
     border-right: 1px solid oklch(0.2 0.028 260);
   }
-  
+
   /* Primary gradient utilities */
   .bg-primary-gradient {
     background: linear-gradient(135deg, 
       oklch(0.65 0.25 280) 0%, 
       oklch(0.58 0.22 240) 100%);
   }
-  
+
   .dark .bg-primary-gradient {
     background: linear-gradient(135deg, 
       oklch(0.8 0.25 280) 0%, 
       oklch(0.75 0.22 240) 100%);
   }
-  
+
   .bg-accent-gradient {
     background: linear-gradient(135deg, 
       oklch(0.88 0.08 320) 0%, 
       oklch(0.92 0.05 280) 100%);
   }
-  
+
   .dark .bg-accent-gradient {
     background: linear-gradient(135deg, 
       oklch(0.22 0.08 320) 0%, 
       oklch(0.25 0.05 280) 100%);
   }
-  
+
   /* Custom scrollbar styles */
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
   }
-  
+
   ::-webkit-scrollbar-track {
     @apply bg-muted/20;
     border-radius: 4px;
   }
-  
+
   ::-webkit-scrollbar-thumb {
     @apply bg-muted-foreground/30;
     border-radius: 4px;
     transition: background-color 0.2s ease;
   }
-  
+
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-muted-foreground/50;
   }
-  
+
   /* Enhanced scroll animations */
   .scroll-smooth {
     scroll-behavior: smooth;
   }
-  
+
   /* Custom easing for smooth animations */
   .transition-smooth {
     transition-timing-function: cubic-bezier(0.4, 0.0, 0.2, 1);
   }
-  
+
   .transition-bounce {
     transition-timing-function: cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
-  
+
   /* Enhanced page transitions */
   .page-enter {
     opacity: 0;
     transform: translateY(10px);
   }
-  
+
   .page-enter-active {
     opacity: 1;
     transform: translateY(0px);
     transition: opacity 300ms ease-out, transform 300ms ease-out;
   }
-  
+
   .page-exit {
     opacity: 1;
     transform: translateY(0px);
   }
-  
+
   .page-exit-active {
     opacity: 0;
     transform: translateY(-10px);

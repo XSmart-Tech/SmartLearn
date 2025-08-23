@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { doc, onSnapshot, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import type { PublicUser, Role } from '@/lib/types'
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui'
+import type { PublicUser } from '@/lib/types'
+import { Avatar, AvatarImage, AvatarFallback, H4 } from '@/components/ui'
 
 function useUsers(uids: string[], realtime = false) {
   const [map, setMap] = useState<Record<string, PublicUser>>({})
@@ -36,16 +36,22 @@ function useUsers(uids: string[], realtime = false) {
   return map
 }
 
-export default function ShareList({ ownerId, share, realtime = false }: { ownerId: string; share: Record<string, Exclude<Role,'owner'>>; realtime?: boolean }) {
+export default function ShareList({ ownerId, share, realtime = false }: { ownerId: string; share: string[] | Record<string, unknown> | undefined; realtime?: boolean }) {
+  const shareUids = useMemo(() => {
+    if (Array.isArray(share)) return share
+    if (share && typeof share === 'object') return Object.keys(share)
+    return [] as string[]
+  }, [share])
+
   const uids = useMemo(() => {
-    const s = new Set<string>([ownerId, ...Object.keys(share || {})])
+    const s = new Set<string>([ownerId, ...shareUids])
     return Array.from(s)
-  }, [ownerId, share])
+  }, [ownerId, shareUids])
   const users = useUsers(uids, realtime)
 
   return (
-    <div className="rounded-2xl border p-3">
-      <div className="text-sm font-semibold mb-2">Quyền chia sẻ</div>
+        <div className="rounded-2xl border p-3">
+          <H4 className="text-sm font-semibold mb-2">Quyền chia sẻ</H4>
       <ul className="space-y-1">
         <li className="flex items-center gap-2 text-sm">
           <Avatar>
@@ -61,8 +67,8 @@ export default function ShareList({ ownerId, share, realtime = false }: { ownerI
           </div>
           <span className="text-xs rounded-full border px-2 py-0.5">owner</span>
         </li>
-        {Object.entries(share || {}).map(([uid, role]) => (
-            <li key={uid} className="flex items-center gap-2 text-sm">
+        {shareUids.map((uid) => (
+          <li key={uid} className="flex items-center gap-2 text-sm">
             <Avatar>
               {users[uid]?.photoURL ? (
                 <AvatarImage src={users[uid]?.photoURL} alt={users[uid]?.displayName || uid} />
@@ -74,7 +80,7 @@ export default function ShareList({ ownerId, share, realtime = false }: { ownerI
               <span className="font-medium">{users[uid]?.displayName || uid}</span>
               <span className="text-gray-500 ml-1">({users[uid]?.email || '—'})</span>
             </div>
-            <span className="text-xs rounded-full border px-2 py-0.5">{role}</span>
+            <span className="text-xs rounded-full border px-2 py-0.5">member</span>
           </li>
         ))}
       </ul>
