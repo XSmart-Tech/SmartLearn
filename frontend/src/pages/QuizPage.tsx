@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import type { RootState, AppDispatch } from '@/store'
 import { fetchCards } from '@/store/cardsSlice'
 import { fetchLibraries } from '@/store/librariesSlice'
-import { Button } from '@/components/ui'
+import { Button, P, Small, Large } from '@/components/ui'
 
 export default function QuizPage() {
   const dispatch = useDispatch<AppDispatch>()
@@ -100,17 +100,17 @@ export default function QuizPage() {
     }).join('')
   }
 
-  if (!user) return <div>Hãy đăng nhập để làm quiz.</div>
-  if (order.length === 0) return <div>Chưa có thư viện nào. Hãy tạo thư viện trước.</div>
-  if (!card) return (
-    <div className="space-y-3">
+  if (!user) return <P>Hãy đăng nhập để làm quiz.</P>
+  if (order.length === 0) return <P>Chưa có thư viện nào. Hãy tạo thư viện trước.</P>
+    if (!card) return (
+      <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <label className="text-sm text-gray-600">Thư viện:</label>
+        <Small>Thư viện:</Small>
         <select value={libId} onChange={(e) => { setI(0); setShow(false); setLibId(e.target.value) }} className="rounded-xl border px-2 py-1 text-sm">
           {libs.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
         </select>
       </div>
-      <div>Thư viện này chưa có thẻ. Thêm thẻ để bắt đầu quiz.</div>
+      <P>Thư viện này chưa có thẻ. Thêm thẻ để bắt đầu quiz.</P>
     </div>
   )
 
@@ -189,8 +189,8 @@ export default function QuizPage() {
       {/* show quiz UI only when started; when finished show summary */}
       {started ? (
         <>
-          <div className="rounded-2xl border p-6 text-center">
-            <div className="text-lg font-semibold">{card.front}</div>
+            <div className="rounded-2xl border p-6 text-center">
+              <Large>{card.front}</Large>
             {/* render by mode */}
             {(() => {
               const effectiveMode = cardMode
@@ -207,7 +207,7 @@ export default function QuizPage() {
                         }}>{c}</Button>
                       </div>
                     ))}
-                    {mcqResult !== null && <div className="text-sm mt-2">{mcqResult ? 'Chính xác 🎉' : 'Sai — đáp án đúng: ' + card.back}</div>}
+                    {mcqResult !== null && <Small>{mcqResult ? 'Chính xác 🎉' : 'Sai — đáp án đúng: ' + card.back}</Small>}
                   </div>
                 )
               } else {
@@ -225,8 +225,8 @@ export default function QuizPage() {
                         setShow(true) // will reveal hint only for fill mode
                       }}>Kiểm tra</Button>
                     </div>
-                    {fillResult !== null && <div className="text-sm mt-2">{fillResult ? 'Chính xác 🎉' : 'Sai'}</div>}
-                    {show && <div className="mt-2 text-gray-600">{card.hint ?? maskAnswer(card.back)}</div>}
+                    {fillResult !== null && <Small>{fillResult ? 'Chính xác 🎉' : 'Sai'}</Small>}
+                    {show && <Small>{card.hint ?? maskAnswer(card.back)}</Small>}
                   </div>
                 )
               }

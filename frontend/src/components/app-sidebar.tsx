@@ -22,7 +22,7 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
-} from "@/components/ui/sidebar"
+} from "@/components/ui"
 import { useAuth } from "@/hooks/useAuth"
 
 const data = {
@@ -168,15 +168,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   }
 
   return (
-    <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+    <Sidebar collapsible="icon" className="sidebar-gradient border-sidebar-ring" {...props}>
+      <SidebarHeader className="px-3 py-4">
+        <div className="flex items-center justify-between gap-2">
+          <TeamSwitcher teams={data.teams} />
+        </div>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="space-y-2 px-2 py-3">
         <NavMain items={data.navMain} />
         <NavProjects projects={data.projects} />
       </SidebarContent>
-      <SidebarFooter>
+      <SidebarFooter className="px-3 py-3">
         <NavUser user={userData} />
       </SidebarFooter>
       <SidebarRail />

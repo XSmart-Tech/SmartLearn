@@ -7,7 +7,7 @@ import { fetchLibraryById } from '@/store/librariesSlice'
 import ShareDialog from '@/components/ShareDialog'
 import ShareList from '@/components/ShareList'
 import ImportExport from '@/components/ImportExport'
-import { Button, Input, Dialog, DialogContent, DialogTitle, DialogHeader, DialogFooter, DialogClose } from '@/components/ui'
+import { Button, Input, Dialog, DialogContent, DialogTitle, DialogHeader, DialogFooter, DialogClose, H2, P, Small, Large } from '@/components/ui'
 import { useParams, useSearchParams } from 'react-router-dom'
 
 export default function LibraryDetailPage() {
@@ -68,7 +68,7 @@ export default function LibraryDetailPage() {
   return (
     <section className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">{lib?.name ?? 'Thư viện'}</h2>
+  <H2>{lib?.name ?? 'Thư viện'}</H2>
         <div className="flex gap-2">
           {isOwner && <Button onClick={() => setShareOpen(true)}>Chia sẻ</Button>}
           {isOwner && (
@@ -91,13 +91,13 @@ export default function LibraryDetailPage() {
           <Button onClick={openAdd}>Thêm</Button>
         </div>
       ) : (
-        <div className="text-sm text-gray-500">Bạn không có quyền chỉnh sửa thư viện này.</div>
+  <Small>Bạn không có quyền chỉnh sửa thư viện này.</Small>
       )}
 
-      <ul className="space-y-2">
+  <ul className="space-y-2">
         {cards.map((c) => (
           <li key={c.id} className="flex items-center gap-2 rounded-xl border p-3">
-            <div className="flex-1"><b>{c.front}</b> — {c.back}</div>
+            <div className="flex-1"><Large>{c.front}</Large>  <P>{c.back}</P></div>
             {isOwner && (
               <>
                 <Button onClick={() => openEdit(c)}>Sửa</Button>

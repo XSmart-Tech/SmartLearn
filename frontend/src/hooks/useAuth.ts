@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import type { RootState } from '@/store'
 import { setLoading, setUser } from '@/store/authSlice'
 import { signInGoogle, signOutApp, watchAuth, ensureUserProfile } from '@/lib/firebase'
+import { toast } from 'sonner'
 
 export function useAuth() {
   const dispatch = useDispatch()
@@ -15,5 +16,30 @@ export function useAuth() {
       if (u) ensureUserProfile(u).catch(() => {})
     })
   }, [dispatch])
-  return { user, status, signInGoogle, signOutApp }
+  // wrap the raw firebase calls so we can show toast notifications on success/failure
+  const signIn = async () => {
+    try {
+      await signInGoogle()
+      toast.success('Đăng nhập thành công')
+    } catch (err: unknown) {
+      console.error('signInGoogle error', err)
+      const msg = err instanceof Error ? err.message : String(err)
+      toast.error(msg || 'Đăng nhập thất bại')
+      throw err
+    }
+  }
+
+  const signOut = async () => {
+    try {
+      await signOutApp()
+      toast.success('Đăng xuất thành công')
+    } catch (err: unknown) {
+      console.error('signOutApp error', err)
+      const msg = err instanceof Error ? err.message : String(err)
+      toast.error(msg || 'Đăng xuất thất bại')
+      throw err
+    }
+  }
+
+  return { user, status, signInGoogle: signIn, signOutApp: signOut }
 }

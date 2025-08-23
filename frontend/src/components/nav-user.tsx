@@ -13,8 +13,6 @@ import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from "@/components/ui/avatar"
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
@@ -22,13 +20,12 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@/components/ui/sidebar"
+} from "@/components/ui"
+import { Button } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth';
 
 export function NavUser({ user }: { user: { displayName: string; email: string; photoURL: string | null } | null }) {
@@ -37,9 +34,7 @@ export function NavUser({ user }: { user: { displayName: string; email: string; 
 
   if (!user) {
     return (
-      <button onClick={signInGoogle} className="btn btn-primary">
-        Đăng nhập
-      </button>
+  <Button onClick={signInGoogle}>Đăng nhập</Button>
     );
   }
 

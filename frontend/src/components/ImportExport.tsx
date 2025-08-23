@@ -1,4 +1,4 @@
-import { Button } from './ui/button'
+import { Button } from '@/components/ui'
 import { cardsToCSV, csvToCards } from '@/lib/csv'
 import type { Flashcard } from '@/lib/types'
 

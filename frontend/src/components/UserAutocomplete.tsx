@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { searchUsers } from '@/lib/firebase'
 import type { PublicUser } from '@/lib/types'
-import { Input } from './ui/input'
-import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar'
+import { Input, Avatar, AvatarImage, AvatarFallback, Button, Small } from '@/components/ui'
 
 export default function UserAutocomplete({ onSelect }: { onSelect: (u: PublicUser) => void }) {
   const [q, setQ] = useState('')
@@ -35,7 +34,7 @@ export default function UserAutocomplete({ onSelect }: { onSelect: (u: PublicUse
       {open && items.length > 0 && (
         <div className="absolute z-50 mt-1 w-full rounded-xl border bg-white shadow">
           {items.map(u => (
-            <button key={u.uid} className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-gray-50" onClick={() => select(u)}>
+            <Button key={u.uid} variant="ghost" className="flex w-full items-center gap-2 px-3 py-2 text-left" onClick={() => select(u)}>
               <Avatar>
                 {u.photoURL ? (
                   <AvatarImage src={u.photoURL} alt={u.displayName || u.email} />
@@ -44,10 +43,10 @@ export default function UserAutocomplete({ onSelect }: { onSelect: (u: PublicUse
                 )}
               </Avatar>
               <div className="flex-1">
-                <div className="text-sm font-medium">{u.displayName || u.email}</div>
-                <div className="text-xs text-gray-500">{u.email}</div>
+                <div className="font-medium"><Small>{u.displayName || u.email}</Small></div>
+                <Small>{u.email}</Small>
               </div>
-            </button>
+            </Button>
           ))}
         </div>
       )}

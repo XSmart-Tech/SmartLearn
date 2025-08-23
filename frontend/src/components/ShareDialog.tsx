@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { Dialog } from './ui/dialog'
-import { Button } from './ui/button'
+import { Dialog, Button } from '@/components/ui'
 import UserAutocomplete from './UserAutocomplete'
 import type { PublicUser } from '@/lib/types'
 

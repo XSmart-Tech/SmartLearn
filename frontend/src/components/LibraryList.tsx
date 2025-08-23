@@ -3,8 +3,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
 import type { RootState, AppDispatch } from '@/store'
 import { createLibrary, fetchLibraries, removeLibrary } from '@/store/librariesSlice'
-import { Button } from './ui/button'
-import { Input } from './ui/input'
+import { Button, Input, Small, Large } from '@/components/ui'
 
 export default function LibraryList() {
   const dispatch = useDispatch<AppDispatch>()
@@ -30,8 +29,8 @@ export default function LibraryList() {
         {libs.map(lib => (
           <li key={lib.id} className="flex items-center justify-between rounded-xl border p-3">
             <div>
-              <Link to={`/app/libraries/${lib.id}`} className="font-medium underline">{lib.name}</Link>
-              {lib.description && <div className="text-xs text-gray-500">{lib.description}</div>}
+              <Link to={`/app/libraries/${lib.id}`} className="font-medium underline"><Large className="inline">{lib.name}</Large></Link>
+              {lib.description && <Small>{lib.description}</Small>}
             </div>
             <div className="flex gap-2">
               <Link to={`/app/libraries/${lib.id}`} className="text-sm underline">Chi tiết</Link>
@@ -41,7 +40,7 @@ export default function LibraryList() {
             </div>
           </li>
         ))}
-        {libs.length === 0 && <li className="text-sm text-gray-500">Chưa có thư viện nào.</li>}
+  {libs.length === 0 && <li><Small className="text-gray-500">Chưa có thư viện nào.</Small></li>}
       </ul>
     </section>
   )

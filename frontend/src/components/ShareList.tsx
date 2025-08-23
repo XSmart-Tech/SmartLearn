@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { doc, onSnapshot, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import type { PublicUser, Role } from '@/lib/types'
-import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui'
 
 function useUsers(uids: string[], realtime = false) {
   const [map, setMap] = useState<Record<string, PublicUser>>({})

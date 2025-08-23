@@ -5,7 +5,7 @@ import type { RootState, AppDispatch } from '@/store'
 import { fetchCards, updateCard } from '@/store/cardsSlice'
 import { fetchLibraries } from '@/store/librariesSlice'
 import { reviewSM2 } from '@/lib/sm2'
-import { Button } from '@/components/ui'
+import { Button, P, Small, Large } from '@/components/ui'
 
 export default function StudyPage() {
   const dispatch = useDispatch<AppDispatch>()
@@ -47,13 +47,13 @@ export default function StudyPage() {
     setCurrent(i => i + 1)
   }
 
-  if (!user) return <div>Hãy đăng nhập để học.</div>
-  if (order.length === 0) return <div>Chưa có thư viện nào. Hãy tạo thư viện và thêm thẻ.</div>
+  if (!user) return <P>Hãy đăng nhập để học.</P>
+  if (order.length === 0) return <P>Chưa có thư viện nào. Hãy tạo thư viện và thêm thẻ.</P>
 
   return (
     <div>
       <div className="flex items-center gap-2">
-        <label className="text-sm text-gray-600">Thư viện:</label>
+        <Small>Thư viện:</Small>
         <select value={libId} onChange={(e) => setLibId(e.target.value)} className="rounded-xl border px-2 py-1 text-sm">
           {libs.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
         </select>
@@ -62,8 +62,8 @@ export default function StudyPage() {
       {card ? (
         <>
           <div className="rounded-2xl border p-6 text-center">
-            <div className="text-lg font-semibold">{card.front}</div>
-            <div className="mt-2 text-gray-600">{card.back}</div>
+            <Large>{card.front}</Large>
+            <Small>{card.back}</Small>
           </div>
           <div className="grid grid-cols-6 gap-2 text-xs">
             {([0,1,2,3,4,5] as (0 | 1 | 2 | 3 | 4 | 5)[]).map((q) => <Button key={q} onClick={() => answer(q)}>{q}</Button>)}
