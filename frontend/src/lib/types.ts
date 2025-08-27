@@ -2,12 +2,9 @@ export interface Flashcard {
   id: string
   front: string
   back: string
-  hint?: string
-  tags?: string[]
-  easiness?: number // SM-2
-  interval?: number // days
-  repetition?: number
-  dueAt?: number // epoch ms
+  description?: string
+  // SM-2 fields were removed from the public Flashcard shape.
+  // Internal scheduling values are stored but not part of the typed model here.
   createdAt: number
   updatedAt: number,
   libraryId: string

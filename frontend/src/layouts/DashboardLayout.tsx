@@ -1,3 +1,4 @@
+import * as React from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import {
   Breadcrumb,
@@ -11,9 +12,11 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui"
+import { Link, useMatches } from 'react-router-dom'
 import { Outlet } from "react-router-dom";
 import { Suspense } from "react";
 import Loader from "@/components/ui/loader";
+import NavigationLoader from '@/components/ui/navigation-loader'
 
 export default function DashboardLayout() {
   return (
@@ -26,18 +29,40 @@ export default function DashboardLayout() {
             <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
             <Breadcrumb>
               <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="#">Building Your Application</BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Data Fetching</BreadcrumbPage>
-                </BreadcrumbItem>
+                {
+                  // Build breadcrumb items from route matches. Each route can define `handle.crumb` as a string or function.
+                  useMatches()
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    .filter((m): m is (typeof m & { handle: unknown }) => !!(m.handle as any) && !!((m.handle as any).crumb))
+                    .map((m, idx, arr) => {
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      const handle = m.handle as unknown as { crumb: string | ((match: any) => string) }
+                      const crumb = typeof handle.crumb === 'function' ? handle.crumb(m) : handle.crumb
+                      const isLast = idx === arr.length - 1
+
+                      // If last, render page text. Otherwise render link.
+                      return (
+                        <React.Fragment key={m.id}>
+                          <BreadcrumbItem>
+                            {!isLast ? (
+                              <BreadcrumbLink asChild>
+                                <Link to={m.pathname ?? '#'}>{crumb}</Link>
+                              </BreadcrumbLink>
+                            ) : (
+                              <BreadcrumbPage>{crumb}</BreadcrumbPage>
+                            )}
+                          </BreadcrumbItem>
+                          {!isLast && <BreadcrumbSeparator />}
+                        </React.Fragment>
+                      )
+                    })
+                }
               </BreadcrumbList>
             </Breadcrumb>
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-6 pt-4">
+          <NavigationLoader />
           <Suspense fallback={<Loader />}>
             <Outlet />
           </Suspense>

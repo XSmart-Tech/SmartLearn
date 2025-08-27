@@ -1,7 +1,12 @@
 import { createSlice } from '@reduxjs/toolkit'
 
 // Keep only a small, serializable shape of the firebase user in the store.
-export interface SerializableUser { uid: string; email: string | null; displayName: string | null; photoURL: string | null }
+export interface SerializableUser {
+  uid: string
+  email: string | null
+  displayName: string | null
+  photoURL: string | null
+}
 interface AuthState { user: SerializableUser | null; status: 'idle'|'loading'|'ready' }
 const initial: AuthState = { user: null, status: 'idle' }
 

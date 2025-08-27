@@ -5,6 +5,7 @@ export type LoaderProps = {
   color?: string;
   className?: string;
   label?: string;
+  fullScreen?: boolean;
 };
 
 const Loader: React.FC<LoaderProps> = ({
@@ -12,13 +13,22 @@ const Loader: React.FC<LoaderProps> = ({
   color = "black",
   className = "",
   label = "Đang tải",
+  fullScreen = false,
 }) => {
+  // when fullscreen, add a semi-transparent dark background
+  const rootClass = fullScreen
+    ? `fixed inset-0 z-50 flex items-center justify-center bg-black/60 ${className}`
+    : `flex items-center justify-center w-full h-full ${className}`;
+
+  // ensure loader contrasts on dark overlay by defaulting to white in fullscreen
+  const displayColor = fullScreen && color === "black" ? "white" : color;
+
   return (
     <div
-      className={`flex items-center justify-center w-full h-full ${className}`}
+      className={rootClass}
       role="status"
       aria-label={label}
-      style={{ color }}
+      style={{ color: displayColor }}
     >
       <div style={{ width: size, height: size }} className="relative">
         <div className="absolute animate-[speeder_0.4s_linear_infinite]" style={{ top: "50%", left: "50%", transform: 'translate(-50%, -50%)' }}>

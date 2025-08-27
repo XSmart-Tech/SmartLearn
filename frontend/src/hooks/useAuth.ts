@@ -4,6 +4,7 @@ import type { RootState } from '@/store'
 import { setLoading, setUser } from '@/store/authSlice'
 import { signInGoogle, signOutApp, watchAuth, ensureUserProfile } from '@/lib/firebase'
 import { toast } from 'sonner'
+// import { useNavigate } from 'react-router-dom'
 
 export function useAuth() {
   const dispatch = useDispatch()
@@ -26,7 +27,7 @@ export function useAuth() {
   const signIn = async () => {
     try {
       await signInGoogle()
-      toast.success('Đăng nhập thành công')
+      toast.success('\u0110\u0103ng nh\u1eadp th\u00e0nh c\u00f4ng')
     } catch (err: unknown) {
       console.error('signInGoogle error', err)
       const msg = err instanceof Error ? err.message : String(err)
@@ -39,6 +40,8 @@ export function useAuth() {
     try {
       await signOutApp()
       toast.success('Đăng xuất thành công')
+  // Note: navigation after sign-out should be handled by the caller (router
+  // context may not be available when this hook is used at app root).
     } catch (err: unknown) {
       console.error('signOutApp error', err)
       const msg = err instanceof Error ? err.message : String(err)

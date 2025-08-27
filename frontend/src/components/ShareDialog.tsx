@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Dialog, Button, H3, Small } from '@/components/ui'
+import { Dialog, Button, Small } from '@/components/ui'
 import UserAutocomplete from './UserAutocomplete'
 import type { PublicUser } from '@/lib/types'
 
@@ -8,8 +8,7 @@ export default function ShareDialog({ open, onClose, onShare }: { open: boolean;
   const canSave = !!target
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <H3 className="mb-2">Chia sẻ thư viện</H3>
-      <div className="space-y-3">
+      <div className="flex gap-2">
         <UserAutocomplete onSelect={(u) => setTarget(u)} />
         {target && (
           <Small className="text-sm text-gray-600">Chọn: <b>{target.displayName || target.email}</b> ({target.email})</Small>

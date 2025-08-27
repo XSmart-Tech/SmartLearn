@@ -50,8 +50,8 @@ export default function ShareList({ ownerId, share, realtime = false }: { ownerI
   const users = useUsers(uids, realtime)
 
   return (
-        <div className="rounded-2xl border p-3">
-          <H4 className="text-sm font-semibold mb-2">Quyền chia sẻ</H4>
+    <div className="rounded-2xl border p-3">
+      <H4 className="text-sm font-semibold mb-2">Quyền chia sẻ</H4>
       <ul className="space-y-1">
         <li className="flex items-center gap-2 text-sm">
           <Avatar>
