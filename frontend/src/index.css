@@ -162,11 +162,13 @@
 
   html {
     scroll-behavior: smooth;
+    overflow-x: hidden;
   }
 
   body {
     @apply bg-background text-foreground;
     background: var(--background);
+    overflow-x: hidden;
   }
 
   /* Colorful icon classes */

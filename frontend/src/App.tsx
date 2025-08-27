@@ -1,5 +1,5 @@
 import AppRouter from './router'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuth } from '@/features/auth/hooks/useAuth'
 
 export default function App() {
 	// start the auth listener as soon as the app mounts so Redux has the

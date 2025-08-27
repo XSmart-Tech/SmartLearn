@@ -1,18 +1,21 @@
-import { StrictMode } from 'react'
+import { StrictMode, Suspense, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Provider } from 'react-redux'
-import { store } from './store'
+import { store } from './shared/store'
 import App from './App'
 import './index.css'
-import { Toaster } from '@/components/ui'
-import ThemeManager from './lib/themeManager'
+import ThemeManager from './shared/lib/themeManager'
+
+const Toaster = lazy(() => import('@/shared/ui').then(m => ({ default: m.Toaster })))
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <Provider store={store}>
       <ThemeManager />
       <App />
-      <Toaster />
+      <Suspense fallback={null}>
+        <Toaster />
+      </Suspense>
     </Provider>
   </StrictMode>
 )
