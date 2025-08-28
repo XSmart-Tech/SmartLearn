@@ -6,6 +6,8 @@ import cards from './cardsSlice'
 import { libraryUsersReducer } from './libraryUsersSlice'
 import theme from './themeSlice'
 import { apiSlice } from './apiSlice'
+import enhancedApiSlice from '@/shared/lib/enhancedCache'
+import notifications from './notificationsSlice'
 
 export const store = configureStore({
   reducer: {
@@ -14,7 +16,9 @@ export const store = configureStore({
     cards,
     libraryUsers: libraryUsersReducer,
     theme,
+    notifications,
     [apiSlice.reducerPath]: apiSlice.reducer,
+    enhancedApi: enhancedApiSlice,
   },
   middleware: (getDefaultMiddleware) => {
     const middlewares = getDefaultMiddleware()

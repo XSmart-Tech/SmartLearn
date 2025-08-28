@@ -3,12 +3,16 @@ import { useDispatch, useSelector } from 'react-redux'
 import type { AppDispatch, RootState } from '@/shared/store'
 import type { Flashcard } from '@/shared/lib/types'
 import { fetchCards, createCard, removeCard, updateCard } from '@/shared/store/cardsSlice'
+import { createNotification } from '@/shared/store/notificationsSlice'
+import { toast } from 'sonner'
 import { fetchLibraryById, updateLibrary } from '@/shared/store/librariesSlice'
 const ShareManager = lazy(() => import('@/features/libraries/components/ShareManager'))
 const ImportExport = lazy(() => import('@/shared/components/ImportExport'))
+const BulkAddCardsDialog = lazy(() => import('@/features/libraries/components/BulkAddCardsDialog'))
 import LibraryDialog from '@/features/libraries/components/LibraryDialog'
 import { useSearch } from '@/shared/hooks/useSearch'
 import { sortCards } from '@/shared/lib/cardUtils'
+import { useRealtimeCards } from '@/shared/hooks/useRealtime'
 import EmptyState from '@/shared/components/EmptyState'
 import {
   Button, Input, Dialog, DialogContent, DialogDescription, DialogTitle,
@@ -40,6 +44,13 @@ export default function LibraryDetailPage() {
   const user = useSelector((s: RootState) => s.auth.user)
 
   const isOwner = Boolean(lib && user && lib.ownerId === user.uid)
+  const userRole: 'owner' | 'contributor' | 'viewer' = useMemo(() => {
+    if (!lib || !user) return 'viewer'
+    if (lib.ownerId === user.uid) return 'owner'
+    if (lib.shareRoles && lib.shareRoles[user.uid]) return lib.shareRoles[user.uid]
+    return 'viewer'
+  }, [lib, user])
+  const canAddCards = userRole === 'owner' || userRole === 'contributor'
 
   const navigate = useNavigate()
 
@@ -60,6 +71,9 @@ export default function LibraryDetailPage() {
       dispatch(fetchCards(id))
     }
   }, [dispatch, id, cardsStatus])
+
+  // Realtime updates cho thẻ
+  useRealtimeCards(id ?? null)
 
   // Đảm bảo lib detail có sẵn (khi vào trực tiếp)
   useEffect(() => { if (id && !lib) dispatch(fetchLibraryById(id)) }, [dispatch, id, lib])
@@ -85,12 +99,30 @@ export default function LibraryDetailPage() {
   }
 
   const onSubmitDialog = () => {
-    if (!id) return
+    if (!id || !lib || !user) return
     if (dialogMode === 'add') {
       const cardPayload: Omit<Flashcard, 'id' | 'createdAt' | 'updatedAt'> = {
         front, back, description: description, libraryId: id
       }
-      dispatch(createCard({ libraryId: id, card: cardPayload }))
+      
+      if (isOwner) {
+        // Owner có thể thêm trực tiếp
+        dispatch(createCard({ libraryId: id, card: cardPayload }))
+      } else if (userRole === 'contributor') {
+        // Contributor gửi request
+        dispatch(createNotification({
+          type: 'card_request',
+          recipientId: lib.ownerId,
+          senderId: user.uid,
+          libraryId: id,
+          status: 'pending',
+          data: {
+            cards: [cardPayload],
+            message: 'Yêu cầu thêm 1 thẻ vào thư viện'
+          }
+        }))
+        toast.success('Đã gửi yêu cầu thêm thẻ đến chủ thư viện')
+      }
     } else if (dialogMode === 'edit' && editingId) {
       dispatch(updateCard({
         id: editingId,
@@ -144,22 +176,53 @@ export default function LibraryDetailPage() {
         </>
       )}
 
-      {/* Management Actions - Only for Owner */}
-      {isOwner && (
+      {/* Management Actions - For Owner and Contributor */}
+      {canAddCards && (
         <>
           <Button onClick={openAdd} className="bg-success hover:bg-success/90" aria-label="Thêm thẻ mới vào thư viện">
             <Plus className="mr-2 h-4 w-4" /> Thêm thẻ
           </Button>
+          <Suspense fallback={<Button variant="outline" disabled>Thêm nhiều thẻ</Button>}>
+            <BulkAddCardsDialog libraryId={id} />
+          </Suspense>
+        </>
+      )}
+
+      {/* Owner-only Actions */}
+      {isOwner && (
+        <>
           <Suspense fallback={<Button variant="outline" disabled>Import/Export</Button>}>
             <ImportExport
               cards={cards}
               onImport={(list) => {
-                if (!id) return
-                for (const c of list) {
-                  const cardPayload: Omit<Flashcard, 'id' | 'createdAt' | 'updatedAt'> = {
-                    front: c.front, back: c.back, description: c.description, libraryId: id
+                if (!id || !lib || !user) return
+                
+                if (isOwner) {
+                  // Owner có thể import trực tiếp
+                  for (const c of list) {
+                    const cardPayload: Omit<Flashcard, 'id' | 'createdAt' | 'updatedAt'> = {
+                      front: c.front, back: c.back, description: c.description, libraryId: id
+                    }
+                    dispatch(createCard({ libraryId: id, card: cardPayload }))
                   }
-                  dispatch(createCard({ libraryId: id, card: cardPayload }))
+                } else if (userRole === 'contributor') {
+                  // Contributor gửi request
+                  const cardPayloads: Omit<Flashcard, 'id' | 'createdAt' | 'updatedAt'>[] = list.map(c => ({
+                    front: c.front, back: c.back, description: c.description, libraryId: id
+                  }))
+                  
+                  dispatch(createNotification({
+                    type: 'card_request',
+                    recipientId: lib.ownerId,
+                    senderId: user.uid,
+                    libraryId: id,
+                    status: 'pending',
+                    data: {
+                      cards: cardPayloads,
+                      message: `Yêu cầu import ${list.length} thẻ vào thư viện`
+                    }
+                  }))
+                  toast.success(`Đã gửi yêu cầu import ${list.length} thẻ đến chủ thư viện`)
                 }
               }}
             />
@@ -187,6 +250,7 @@ export default function LibraryDetailPage() {
             libraryId={lib.id}
             ownerId={lib.ownerId}
             share={lib.share}
+            shareRoles={lib.shareRoles}
             isOwner={isOwner}
             trigger={<Button variant="secondary" aria-label="Chia sẻ thư viện"><Share2 className="h-4 w-4" /></Button>}
           />
@@ -365,8 +429,13 @@ export default function LibraryDetailPage() {
     <EmptyState
       icon={<Plus className="h-8 w-8 text-gray-400" />}
       title="Chưa có thẻ nào trong thư viện này."
-      description="Bắt đầu tạo bộ thẻ ghi nhớ đầu tiên của bạn!"
-      action={isOwner && <Button className="mt-3 bg-primary hover:bg-primary/90" onClick={openAdd}><Plus className="mr-2 h-4 w-4" /> Tạo thẻ đầu tiên</Button>}
+      description={isOwner 
+        ? "Bắt đầu tạo bộ thẻ ghi nhớ đầu tiên của bạn!" 
+        : userRole === 'contributor'
+        ? "Bạn có thể gửi yêu cầu thêm thẻ đến chủ thư viện."
+        : "Chỉ chủ thư viện mới có thể thêm thẻ."
+      }
+      action={isOwner ? <Button className="mt-3 bg-primary hover:bg-primary/90" onClick={openAdd}><Plus className="mr-2 h-4 w-4" /> Tạo thẻ đầu tiên</Button> : null}
     />
   )
 
@@ -397,7 +466,12 @@ export default function LibraryDetailPage() {
 
           <SearchBox />
 
-          {!isOwner && <Small className="text-muted-foreground">Bạn không có quyền chỉnh sửa thư viện này.</Small>}
+          {!isOwner && <Small className="text-muted-foreground">
+            {userRole === 'contributor' 
+              ? 'Bạn có thể thêm thẻ bằng cách gửi yêu cầu đến chủ thư viện.' 
+              : 'Bạn không có quyền chỉnh sửa thư viện này.'
+            }
+          </Small>}
 
           {!hasCards ? (
             renderEmptyNoCards()
@@ -423,9 +497,9 @@ export default function LibraryDetailPage() {
       <Dialog open={dialogMode !== null} onOpenChange={(open) => { if (!open) closeDialog() }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{dialogMode === 'edit' ? 'Sửa thẻ' : 'Thêm thẻ'}</DialogTitle>
+            <DialogTitle>{dialogMode === 'edit' ? 'Sửa thẻ' : (userRole === 'contributor' ? 'Yêu cầu thêm thẻ' : 'Thêm thẻ')}</DialogTitle>
             <DialogDescription className="sr-only">
-              {dialogMode === 'edit' ? 'Form to edit a flashcard' : 'Form to add a new flashcard'}
+              {dialogMode === 'edit' ? 'Form to edit a flashcard' : (userRole === 'contributor' ? 'Form to request adding a new flashcard' : 'Form to add a new flashcard')}
             </DialogDescription>
           </DialogHeader>
 
@@ -437,7 +511,9 @@ export default function LibraryDetailPage() {
 
           <DialogFooter>
             <Button variant="secondary" onClick={closeDialog}>Hủy</Button>
-            <Button onClick={onSubmitDialog} disabled={!front.trim() || !back.trim()}>{dialogMode === 'edit' ? 'Lưu' : 'Thêm'}</Button>
+            <Button onClick={onSubmitDialog} disabled={!front.trim() || !back.trim()}>
+              {dialogMode === 'edit' ? 'Lưu' : (userRole === 'contributor' ? 'Gửi yêu cầu' : 'Thêm')}
+            </Button>
           </DialogFooter>
           <DialogClose />
         </DialogContent>

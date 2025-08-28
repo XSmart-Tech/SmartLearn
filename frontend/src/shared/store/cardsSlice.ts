@@ -78,6 +78,13 @@ const cardsSlice = createSlice({
   initialState: initial,
   reducers: {
     resetCards: () => initial,
+    updateCardsRealtime: (s, a: { payload: { libraryId: string; cards: Flashcard[] } }) => {
+      const { libraryId, cards } = a.payload
+      s.byLib[libraryId] = cards
+      s.byLibStatus[libraryId] = 'ready' // Keep status as ready to avoid skeleton
+      s.byLibError[libraryId] = null
+      for (const c of cards) s.cardToLib[c.id] = libraryId
+    },
   },
   extraReducers: (b) => {
     b.addCase(fetchCards.pending, (s, a) => {
@@ -98,13 +105,7 @@ const cardsSlice = createSlice({
       s.byLibError[libId] = a.error?.message ?? 'Không tải được thẻ.'
     })
 
-    b.addCase(createCard.fulfilled, (s, a) => {
-      const libId = a.payload.libraryId
-      if (!s.byLib[libId]) s.byLib[libId] = []
-      s.byLib[libId].unshift(a.payload)
-      s.cardToLib[a.payload.id] = libId
-      s.byLibStatus[libId] = s.byLibStatus[libId] ?? 'ready'
-    })
+
 
     b.addCase(updateCard.fulfilled, (s, a) => {
       const { id, patch } = a.payload
@@ -136,5 +137,5 @@ const cardsSlice = createSlice({
   }
 })
 
-export const { resetCards } = cardsSlice.actions
+export const { resetCards, updateCardsRealtime } = cardsSlice.actions
 export default cardsSlice.reducer

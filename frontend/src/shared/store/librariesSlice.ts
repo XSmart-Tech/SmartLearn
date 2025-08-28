@@ -9,6 +9,7 @@ import {
   where,
   arrayUnion,
   arrayRemove,
+  deleteField,
   type DocumentData,
 } from 'firebase/firestore'
 import { db } from '@/shared/lib/firebase'
@@ -63,6 +64,7 @@ export const createLibrary = createAsyncThunk<
     description: payload.description ?? '',
     ownerId: payload.uid,
     share: [],
+    shareRoles: {},
     createdAt: now,
     updatedAt: now,
   })
@@ -72,6 +74,7 @@ export const createLibrary = createAsyncThunk<
     description: payload.description ?? '',
     ownerId: payload.uid,
     share: [],
+    shareRoles: {},
     createdAt: now,
     updatedAt: now,
   } as Library
@@ -95,11 +98,15 @@ export const removeLibrary = createAsyncThunk<string, string>(
 )
 
 export const setShareRole = createAsyncThunk<
-  { id: string; uid: string },
-  { id: string; uid: string }
+  { id: string; uid: string; role: 'contributor' | 'viewer' },
+  { id: string; uid: string; role: 'contributor' | 'viewer' }
 >('libraries/share', async (payload) => {
   const ref = doc(db, 'libraries', payload.id)
-  await updateDoc(ref, { share: arrayUnion(payload.uid), updatedAt: Date.now() })
+  await updateDoc(ref, {
+    share: arrayUnion(payload.uid),
+    [`shareRoles.${payload.uid}`]: payload.role,
+    updatedAt: Date.now()
+  })
   return payload
 })
 
@@ -108,7 +115,23 @@ export const setUnshareRole = createAsyncThunk<
   { id: string; uid: string }
 >('libraries/unshare', async (payload) => {
   const ref = doc(db, 'libraries', payload.id)
-  await updateDoc(ref, { share: arrayRemove(payload.uid), updatedAt: Date.now() })
+  await updateDoc(ref, {
+    share: arrayRemove(payload.uid),
+    [`shareRoles.${payload.uid}`]: deleteField(),
+    updatedAt: Date.now()
+  })
+  return payload
+})
+
+export const updateUserRole = createAsyncThunk<
+  { id: string; uid: string; role: 'contributor' | 'viewer' },
+  { id: string; uid: string; role: 'contributor' | 'viewer' }
+>('libraries/updateRole', async (payload) => {
+  const ref = doc(db, 'libraries', payload.id)
+  await updateDoc(ref, {
+    [`shareRoles.${payload.uid}`]: payload.role,
+    updatedAt: Date.now()
+  })
   return payload
 })
 
@@ -176,6 +199,8 @@ const slice = createSlice({
       if (t) {
         if (!Array.isArray(t.share)) t.share = []
         if (!t.share.includes(a.payload.uid)) t.share.push(a.payload.uid)
+        if (!t.shareRoles) t.shareRoles = {}
+        t.shareRoles[a.payload.uid] = a.payload.role
       }
     })
 
@@ -183,6 +208,14 @@ const slice = createSlice({
       const t = s.items[a.payload.id]
       if (t && Array.isArray(t.share)) {
         t.share = t.share.filter((u) => u !== a.payload.uid)
+        if (t.shareRoles) delete t.shareRoles[a.payload.uid]
+      }
+    })
+
+    b.addCase(updateUserRole.fulfilled, (s, a) => {
+      const t = s.items[a.payload.id]
+      if (t && t.shareRoles) {
+        t.shareRoles[a.payload.uid] = a.payload.role
       }
     })
   },

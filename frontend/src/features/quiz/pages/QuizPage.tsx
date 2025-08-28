@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import type { RootState, AppDispatch } from '@/shared/store'
 import { fetchCards } from '@/shared/store/cardsSlice'
-import { fetchLibraries } from '@/shared/store/librariesSlice'
+// import { fetchLibraries } from '@/shared/store/librariesSlice'
 import { Button, P, Small, Large, Popover, PopoverTrigger, PopoverContent, Container } from '@/shared/ui'
 import { getRecentLibraryIds, addRecentLibrary } from '@/shared/lib/recent'
 import QuizAnswers from '@/features/study/components/QuizAnswers'
@@ -17,9 +17,10 @@ export default function QuizPage() {
 
   // libraries are available via global store when needed; no select in popover
 
-  useEffect(() => {
-    if (user?.uid && order.length === 0) dispatch(fetchLibraries(user.uid))
-  }, [dispatch, user?.uid, order.length])
+  // Only fetch libraries when user explicitly needs them (not automatically)
+  // useEffect(() => {
+  //   if (user?.uid && order.length === 0) dispatch(fetchLibraries(user.uid))
+  // }, [dispatch, user?.uid, order.length])
 
   const [libId, setLibId] = useState<string | undefined>(() => undefined)
   useEffect(() => {

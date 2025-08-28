@@ -5,16 +5,24 @@ import UserAutocomplete from './UserAutocomplete'
 import { useUserSelection } from '@/shared/hooks/useUserSelection'
 import { DIALOG_TEXTS, STATUS_MESSAGES } from '@/shared/lib/constants'
 import type { PublicUser } from '@/shared/lib/types'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui'
 
 interface AddUserFormProps {
   ownerId: string
   uids: string[]
-  onAdd: (user: PublicUser) => Promise<void>
+  onAdd: (user: PublicUser, role: 'contributor' | 'viewer') => Promise<void>
 }
 
 export function AddUserForm({ ownerId, uids, onAdd }: AddUserFormProps) {
   const { target, setTarget, isSubmitting, setIsSubmitting } = useUserSelection()
   const [error, setError] = useState<string | null>(null)
+  const [role, setRole] = useState<'contributor' | 'viewer'>('viewer')
 
   const canAdd = !!target && target.uid !== ownerId && !uids.includes(target.uid)
 
@@ -24,7 +32,7 @@ export function AddUserForm({ ownerId, uids, onAdd }: AddUserFormProps) {
     try {
       setIsSubmitting(true)
       setError(null)
-      await onAdd(target)
+      await onAdd(target, role)
       setTarget(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Có lỗi xảy ra')
@@ -49,6 +57,15 @@ export function AddUserForm({ ownerId, uids, onAdd }: AddUserFormProps) {
         <div className="flex-1">
           <UserAutocomplete onSelect={setTarget} />
         </div>
+        <Select value={role} onValueChange={(value: 'contributor' | 'viewer') => setRole(value)}>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="viewer">Viewer</SelectItem>
+            <SelectItem value="contributor">Contributor</SelectItem>
+          </SelectContent>
+        </Select>
         <Button
           disabled={!canAdd || isSubmitting}
           onClick={handleAdd}

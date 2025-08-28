@@ -1,25 +1,35 @@
 import { useState } from 'react'
-import { useSelector } from 'react-redux'
-import type { RootState } from '@/shared/store'
+import { useSelector, useDispatch } from 'react-redux'
+import type { RootState, AppDispatch } from '@/shared/store'
 import { selectLibraryUser } from '@/shared/store/libraryUsersSlice'
+import { updateUserRole } from '@/shared/store/librariesSlice'
 import { Avatar, AvatarImage, AvatarFallback, Button } from '@/shared/ui'
 import { Loader2, UserMinus } from 'lucide-react'
 import { STATUS_MESSAGES } from '@/shared/lib/constants'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui'
 
 interface UserRowProps {
   libraryId: string
   uid: string
-  role: 'owner' | 'member'
+  role: 'owner' | 'contributor' | 'viewer'
   isOwner: boolean
   onRemove?: () => Promise<void>
 }
 
 export function UserRow({ libraryId, uid, role, isOwner, onRemove }: UserRowProps) {
+  const dispatch = useDispatch<AppDispatch>()
   const u = useSelector((s: RootState) => selectLibraryUser(libraryId, uid)(s))
   const name = u?.displayName || (role === 'owner' ? 'Chủ sở hữu' : uid)
   const email = u?.email || (role === 'owner' ? 'owner' : '—')
   const initial = (u?.displayName || uid || '?').slice(0, 1).toUpperCase()
   const [removing, setRemoving] = useState(false)
+  const [updatingRole, setUpdatingRole] = useState(false)
 
   const handleRemove = async () => {
     if (!onRemove) return
@@ -28,6 +38,16 @@ export function UserRow({ libraryId, uid, role, isOwner, onRemove }: UserRowProp
       await onRemove()
     } finally {
       setRemoving(false)
+    }
+  }
+
+  const handleRoleChange = async (newRole: 'contributor' | 'viewer') => {
+    if (newRole === role || !isOwner) return
+    try {
+      setUpdatingRole(true)
+      await dispatch(updateUserRole({ id: libraryId, uid, role: newRole })).unwrap()
+    } finally {
+      setUpdatingRole(false)
     }
   }
 
@@ -40,17 +60,40 @@ export function UserRow({ libraryId, uid, role, isOwner, onRemove }: UserRowProp
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="truncate text-sm font-medium text-card-foreground">{name}</span>
-          <span className={[
-            'shrink-0 rounded-full border px-2 py-0.5 text-[11px] border-border',
-            role === 'owner' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground bg-card'
-          ].join(' ')}>
-            {role}
-          </span>
+          {role === 'owner' ? (
+            <span className={[
+              'shrink-0 rounded-full border px-2 py-0.5 text-[11px] border-border',
+              'bg-primary text-primary-foreground'
+            ].join(' ')}>
+              {role}
+            </span>
+          ) : isOwner ? (
+            <Select
+              value={role}
+              onValueChange={handleRoleChange}
+              disabled={updatingRole}
+            >
+              <SelectTrigger className="h-6 w-24 text-[11px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="viewer">Viewer</SelectItem>
+                <SelectItem value="contributor">Contributor</SelectItem>
+              </SelectContent>
+            </Select>
+          ) : (
+            <span className={[
+              'shrink-0 rounded-full border px-2 py-0.5 text-[11px] border-border',
+              'text-muted-foreground bg-card'
+            ].join(' ')}>
+              {role}
+            </span>
+          )}
         </div>
         <div className="truncate text-xs text-muted-foreground">{email}</div>
       </div>
 
-      {role === 'member' && isOwner && onRemove && (
+      {role !== 'owner' && isOwner && onRemove && (
         <Button
           variant="destructive"
           onClick={handleRemove}

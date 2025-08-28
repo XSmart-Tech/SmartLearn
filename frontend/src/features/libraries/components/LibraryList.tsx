@@ -29,17 +29,19 @@ function Badge({
   title,
 }: {
   children: React.ReactNode
-  tone?: "default" | "owner"
+  tone?: "default" | "owner" | "contributor" | "viewer"
   title?: string
 }) {
   const base =
     "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium"
-  const byTone =
-    tone === "owner"
-      ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100"
-      : "bg-gray-100 text-gray-700 ring-1 ring-gray-200"
+  const byTone = {
+    owner: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100",
+    contributor: "bg-blue-50 text-blue-700 ring-1 ring-blue-100", 
+    viewer: "bg-gray-50 text-gray-700 ring-1 ring-gray-200",
+    default: "bg-gray-100 text-gray-700 ring-1 ring-gray-200"
+  }
   return (
-    <span className={`${base} ${byTone}`} title={title}>
+    <span className={`${base} ${byTone[tone]}`} title={title}>
       {children}
     </span>
   )
@@ -83,12 +85,12 @@ const EmptyState = () => (
 const LibraryItem = memo(
   function LibraryItem({
     lib,
-    isOwner,
+    userRole,
     onAskRemove,
     dispatch,
   }: {
     lib: Library
-    isOwner: boolean
+    userRole: 'owner' | 'contributor' | 'viewer'
     onAskRemove: (lib: Library) => void
     dispatch: AppDispatch
   }) {
@@ -96,6 +98,8 @@ const LibraryItem = memo(
       e.stopPropagation();
       onAskRemove(lib);
     }, [onAskRemove, lib])
+
+    const isOwner = userRole === 'owner'
 
     return (
       <li className="group relative rounded-2xl border border-border bg-card p-4 shadow-sm ring-1 ring-sidebar-ring/10 transition hover:shadow-md focus-within:shadow-md">
@@ -119,13 +123,19 @@ const LibraryItem = memo(
               )}
 
               <div className="mt-2 flex flex-wrap items-center gap-2">
-                <Badge tone={isOwner ? "owner" : "default"}>
-                  {isOwner ? (
+                <Badge tone={userRole}>
+                  {userRole === 'owner' ? (
                     <>
                       <Shield className="mr-1 h-3.5 w-3.5" /> Chủ sở hữu
                     </>
+                  ) : userRole === 'contributor' ? (
+                    <>
+                      <Edit className="mr-1 h-3.5 w-3.5" /> Contributor
+                    </>
                   ) : (
-                    "Thành viên"
+                    <>
+                      <FolderOpen className="mr-1 h-3.5 w-3.5" /> Viewer
+                    </>
                   )}
                 </Badge>
                 {/* Có thể hiển thị thêm metadata khác nếu có, ví dụ: số thẻ, cập nhật lần cuối… */}
@@ -167,7 +177,7 @@ const LibraryItem = memo(
     )
   },
   (prev, next) =>
-    prev.isOwner === next.isOwner &&
+    prev.userRole === next.userRole &&
     prev.lib.id === next.lib.id &&
     prev.lib.name === next.lib.name &&
     prev.lib.description === next.lib.description
@@ -233,15 +243,24 @@ export default function LibraryList({
     <section className="space-y-4">
       {libs.length > 0 ? (
         <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-3 xl:grid-cols-4">
-          {libs.map((lib) => (
-            <LibraryItem
-              key={lib.id}
-              lib={lib}
-              isOwner={uid === lib.ownerId}
-              onAskRemove={onAskRemove}
-              dispatch={dispatch}
-            />
-          ))}
+          {libs.map((lib) => {
+            let userRole: 'owner' | 'contributor' | 'viewer' = 'viewer'
+            if (uid === lib.ownerId) {
+              userRole = 'owner'
+            } else if (lib.shareRoles && lib.shareRoles[uid!]) {
+              userRole = lib.shareRoles[uid!]
+            }
+            
+            return (
+              <LibraryItem
+                key={lib.id}
+                lib={lib}
+                userRole={userRole}
+                onAskRemove={onAskRemove}
+                dispatch={dispatch}
+              />
+            )
+          })}
         </ul>
       ) : (
         <EmptyState />

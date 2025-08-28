@@ -1,6 +1,6 @@
 import { initializeApp, type FirebaseApp } from 'firebase/app'
 import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut, type User, type Auth } from 'firebase/auth'
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, CACHE_SIZE_UNLIMITED, serverTimestamp, type Firestore, doc, setDoc, collection, getDocs, where, limit as qLimit } from 'firebase/firestore'
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, CACHE_SIZE_UNLIMITED, serverTimestamp, type Firestore, doc, setDoc, collection, getDocs, where, limit as qLimit, writeBatch } from 'firebase/firestore'
 import { getStorage, type FirebaseStorage } from 'firebase/storage'
 import type { PublicUser } from './types'
 
@@ -65,6 +65,9 @@ class FirebaseService {
   signOutApp = () => signOut(this._auth);
   watchAuth = (cb: (user: import('firebase/auth').User | null) => void) => onAuthStateChanged(this._auth, cb);
 
+  // Batch operations for cost optimization
+  createBatch = () => writeBatch(this._db);
+
   // === User profile helpers ===
   async ensureUserProfile(u: User) {
     const displayName = u.displayName ?? (u.email?.split('@')[0] ?? 'User');
@@ -115,3 +118,4 @@ export const ts = firebaseService.ts;
 export const watchAuth = firebaseService.watchAuth;
 export const ensureUserProfile = firebaseService.ensureUserProfile.bind(firebaseService);
 export const searchUsers = firebaseService.searchUsers.bind(firebaseService);
+export const createBatch = firebaseService.createBatch.bind(firebaseService);

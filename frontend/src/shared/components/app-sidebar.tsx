@@ -17,6 +17,7 @@ import { navMain, teams } from "@/shared/lib/nav"
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuth();
   const userData = {
+    uid: user?.uid ?? "",
     displayName: user?.displayName ?? "User",
     email: user?.email ?? "user@example.com",
     photoURL: user?.photoURL ?? null,

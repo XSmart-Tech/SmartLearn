@@ -78,6 +78,7 @@ export const apiSlice = createApi({
             description: payload.description ?? '',
             ownerId: payload.uid,
             share: [],
+            shareRoles: {},
             createdAt: now,
             updatedAt: now,
           }

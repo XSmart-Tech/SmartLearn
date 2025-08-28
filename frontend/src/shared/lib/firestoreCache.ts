@@ -1,32 +1,50 @@
-import { DocumentReference, Query, getDocFromCache, getDoc, getDocsFromCache, getDocs, onSnapshot } from 'firebase/firestore'
+import { DocumentReference, Query, getDocFromCache, getDoc, getDocsFromCache, getDocs, onSnapshot, type QuerySnapshot, DocumentSnapshot } from 'firebase/firestore'
+import { deduplicateQuery, throttleRequest } from './connectionPool'
 
 export async function getDocCacheFirst<T>(ref: DocumentReference<T>) {
   try {
     const snap = await getDocFromCache(ref)
     if (snap.exists()) return { from: 'cache', snap }
   } catch { /* empty */ }
-  const snap = await getDoc(ref)
-  return { from: 'server', snap }
+
+  // Use deduplication and throttling for server requests
+  return deduplicateQuery(`doc_${ref.path}`, async () => {
+    return throttleRequest(async () => {
+      const snap = await getDoc(ref)
+      return { from: 'server', snap }
+    })
+  })
 }
 
 export async function getDocsCacheFirst<T>(query: Query<T>) {
   let cacheSnap: QuerySnapshot<T> | null = null
   try {
     cacheSnap = await getDocsFromCache(query)
+    // If cache has data and is not empty, return it immediately
+    if (cacheSnap && !cacheSnap.empty) {
+      return { from: 'cache', snap: cacheSnap }
+    }
   } catch {
     cacheSnap = null
   }
 
-  try {
-    const snap = await getDocs(query)
-    return { from: 'server', snap }
-  } catch (err) {
-    if (cacheSnap) return { from: 'cache', snap: cacheSnap }
-    throw err
-  }
+  // Use deduplication and throttling for server requests
+  return deduplicateQuery(`query_${query}`, async () => {
+    return throttleRequest(async () => {
+      const snap = await getDocs(query)
+      return { from: 'server', snap }
+    })
+  })
 }
 
-import { DocumentSnapshot, QuerySnapshot } from 'firebase/firestore'
+export async function getDocsServerOnly<T>(query: Query<T>) {
+  return deduplicateQuery(`query_server_${query}`, async () => {
+    return throttleRequest(async () => {
+      const snap = await getDocs(query)
+      return { from: 'server', snap }
+    })
+  })
+}
 
 export function subscribeOptional<T>(
   enabled: boolean,

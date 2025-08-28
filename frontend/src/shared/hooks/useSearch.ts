@@ -1,8 +1,10 @@
 import { useState, useMemo } from 'react'
+import { useDebounce } from './useDebounce'
 
 interface UseSearchOptions<T> {
   searchFields?: (keyof T)[]
   customFilter?: (item: T, query: string) => boolean
+  debounceDelay?: number
 }
 
 export function useSearch<T>(
@@ -10,9 +12,10 @@ export function useSearch<T>(
   options: UseSearchOptions<T> = {}
 ) {
   const [query, setQuery] = useState('')
+  const debouncedQuery = useDebounce(query, options.debounceDelay ?? 300)
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
+    const q = debouncedQuery.trim().toLowerCase()
     if (!q) return items
 
     if (options.customFilter) {
@@ -34,12 +37,12 @@ export function useSearch<T>(
         return typeof value === 'string' && value.toLowerCase().includes(q)
       })
     })
-  }, [items, query, options])
+  }, [items, debouncedQuery, options])
 
   return {
     query,
     setQuery,
     filtered,
-    hasFilter: query.trim().length > 0
+    hasFilter: debouncedQuery.trim().length > 0
   }
 }

@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState, useCallback, Suspense, lazy } from 'react
 import { useDispatch, useSelector } from 'react-redux'
 import type { RootState, AppDispatch } from '@/shared/store'
 import { fetchCards } from '@/shared/store/cardsSlice'
+import { fetchLibraryById } from '@/shared/store/librariesSlice'
 import type { CardsSliceState, Status } from '@/shared/store/cardsSlice'
-import { fetchLibraries, fetchLibraryById } from '@/shared/store/librariesSlice'
 import { getRecentLibraryIds, addRecentLibrary } from '@/shared/lib/recent'
 import { useSearch } from '@/shared/hooks/useSearch'
 const QuizAnswers = lazy(() => import('@/features/study/components/QuizAnswers'))
@@ -42,9 +42,10 @@ export default function StudyPageMerged() {
   const order = useSelector((s: RootState) => s.libraries.order)
   // libs list intentionally not shown in UI (library selection moved out of study/quiz pages)
 
-  useEffect(() => {
-    if (user?.uid && order.length === 0) dispatch(fetchLibraries(user.uid))
-  }, [dispatch, user?.uid, order.length])
+  // Only fetch libraries when user explicitly needs them (not automatically)
+  // useEffect(() => {
+  //   if (user?.uid && order.length === 0) dispatch(fetchLibraries(user.uid))
+  // }, [dispatch, user?.uid, order.length])
 
   // ===== Shared: library selection =====
   // prefer recent libraries (IndexedDB) -> Redux order[0]

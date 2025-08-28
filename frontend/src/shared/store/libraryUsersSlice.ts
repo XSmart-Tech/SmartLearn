@@ -41,6 +41,9 @@ async function getUserCacheFirst(uid: string): Promise<PublicUser | undefined> {
   return ss.exists() ? norm(uid, ss.data()) : undefined
 }
 
+// Export the function for use in other components
+export { getUserCacheFirst }
+
 // ==== Thunks ====
 export const watchLibraryUsers = createAsyncThunk<
   void,

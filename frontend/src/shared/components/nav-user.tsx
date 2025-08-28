@@ -27,10 +27,35 @@ import {
 } from "@/shared/ui"
 import { Button } from '@/shared/ui'
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { useSelector } from 'react-redux'
+import type { RootState } from '@/shared/store'
+import { useEffect } from 'react'
+import { fetchNotifications } from '@/shared/store/notificationsSlice'
+import { useDispatch } from 'react-redux'
+import type { AppDispatch } from '@/shared/store'
+import NotificationsDialog from './NotificationsDialog'
+import { useRealtimeNotifications } from '@/shared/hooks/useRealtime'
 
-export function NavUser({ user }: { user: { displayName: string; email: string; photoURL: string | null } | null }) {
+export function NavUser({ user }: { user: { uid: string; displayName: string; email: string; photoURL: string | null } | null }) {
   const { signInGoogle, signOutApp } = useAuth();
   const { isMobile } = useSidebar()
+  const dispatch = useDispatch<AppDispatch>()
+  const notifications = useSelector((state: RootState) => state.notifications.items)
+  const pendingCount = notifications.filter(n => n.status === 'pending' && n.recipientId === user?.uid).length
+
+  console.log('[DEBUG] NavUser - User UID:', user?.uid)
+  console.log('[DEBUG] NavUser - All notifications:', notifications.length, notifications.map(n => ({ id: n.id, recipientId: n.recipientId, senderId: n.senderId, status: n.status })))
+  console.log('[DEBUG] NavUser - Pending count:', pendingCount)
+
+  // Use real-time notifications instead of one-time fetch
+  useRealtimeNotifications(user?.uid || null)
+
+  useEffect(() => {
+    if (user) {
+      // Initial fetch as fallback, real-time will handle updates
+      dispatch(fetchNotifications(user.uid))
+    }
+  }, [user, dispatch])
 
   if (!user) {
     return (
@@ -93,9 +118,20 @@ export function NavUser({ user }: { user: { displayName: string; email: string; 
                 <CreditCard />
                 Billing
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Bell />
-                Notifications
+              <DropdownMenuItem asChild>
+                <NotificationsDialog
+                  trigger={
+                    <div className="flex items-center w-full">
+                      <Bell />
+                      Notifications
+                      {pendingCount > 0 && (
+                        <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-1">
+                          {pendingCount}
+                        </span>
+                      )}
+                    </div>
+                  }
+                />
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

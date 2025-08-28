@@ -1,38 +1,75 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
 import { doc, onSnapshot, getDoc } from 'firebase/firestore'
 import { db } from '@/shared/lib/firebase'
 import type { PublicUser } from '@/shared/lib/types'
 import { Avatar, AvatarImage, AvatarFallback, H4 } from '@/shared/ui'
 
-function useUsers(uids: string[], realtime = false) {
+// Optimized user fetching with reduced listeners
+function useOptimizedUsers(uids: string[], realtime = false) {
   const [map, setMap] = useState<Record<string, PublicUser>>({})
+  const listenersRef = useRef<Map<string, () => void>>(new Map())
+  const debounceRef = useRef<NodeJS.Timeout | null>(null)
+
   useEffect(() => {
-    const unsubscribes: (() => void)[] = []
-    let cancelled = false
+    const currentListeners = listenersRef.current
+
+    // Clean up listeners for users not in the new list
+    const currentUids = new Set(currentListeners.keys())
+    const newUids = new Set(uids)
+
+    for (const uid of currentUids) {
+      if (!newUids.has(uid)) {
+        const unsubscribe = currentListeners.get(uid)
+        unsubscribe?.()
+        currentListeners.delete(uid)
+      }
+    }
+
+    // Debounce updates to reduce re-renders
+    const updateUsers = (updates: Record<string, PublicUser>) => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+      debounceRef.current = setTimeout(() => {
+        setMap(prev => ({ ...prev, ...updates }))
+      }, 100)
+    }
+
     const run = async () => {
       const entries = await Promise.all(uids.map(async (uid) => {
+        if (currentListeners.has(uid)) return null // Already have listener
+
         const ref = doc(db, 'users', uid)
         if (realtime) {
           const unsub = onSnapshot(ref, (snap) => {
             const v = snap.data() as PublicUser | undefined
-            setMap(m => ({ ...m, [uid]: { uid, displayName: v?.displayName ?? '', email: v?.email ?? '', photoURL: v?.photoURL ?? '' } }))
+            updateUsers({ [uid]: { uid, displayName: v?.displayName ?? '', email: v?.email ?? '', photoURL: v?.photoURL ?? '' } })
           })
-          unsubscribes.push(unsub)
+          currentListeners.set(uid, unsub)
         } else {
           const snap = await getDoc(ref)
           const v = snap.data() as PublicUser | undefined
           return [uid, { uid, displayName: v?.displayName ?? '', email: v?.email ?? '', photoURL: v?.photoURL ?? '' }] as const
         }
+        return null
       }))
-      if (!realtime && !cancelled) {
+
+      if (!realtime) {
         const next: Record<string, PublicUser> = {}
         for (const e of entries) if (e) next[e[0]] = e[1]
         setMap(next)
       }
     }
+
     run()
-    return () => { cancelled = true; unsubscribes.forEach(u => u()) }
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+      for (const unsub of currentListeners.values()) {
+        unsub()
+      }
+      currentListeners.clear()
+    }
   }, [uids, realtime])
+
   return map
 }
 
@@ -47,7 +84,8 @@ export default function ShareList({ ownerId, share, realtime = false }: { ownerI
     const s = new Set<string>([ownerId, ...shareUids])
     return Array.from(s)
   }, [ownerId, shareUids])
-  const users = useUsers(uids, realtime)
+
+  const users = useOptimizedUsers(uids, realtime)
 
   return (
     <div className="rounded-2xl border p-3">

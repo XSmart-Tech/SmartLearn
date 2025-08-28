@@ -21,6 +21,7 @@ export default function ShareManager({
   libraryId,
   ownerId,
   share,
+  shareRoles,
   isOwner = false,
   mountOnOpen = true,       
   trigger = <Button variant="secondary">Chia sẻ</Button>, // UI nút mở
@@ -28,6 +29,7 @@ export default function ShareManager({
   libraryId: string
   ownerId: string
   share: string[] | Record<string, unknown> | undefined
+  shareRoles?: Record<string, 'contributor' | 'viewer'>
   realtime?: boolean
   isOwner?: boolean
   mountOnOpen?: boolean
@@ -51,6 +53,10 @@ export default function ShareManager({
     return [] as string[]
   }, [share])
 
+  const shareRolesProp = useMemo(() => {
+    return shareRoles || {}
+  }, [shareRoles])
+
   const libEntry = useSelector((s: RootState) => selectLibraryEntryMemoized(s, libraryId))
   const uids = libEntry.uids.length
     ? libEntry.uids
@@ -61,8 +67,8 @@ export default function ShareManager({
     const ownerFirst = uids[0] === ownerId ? uids : [ownerId, ...uids.filter((u: string) => u !== ownerId)]
     const membersCount = Math.max(ownerFirst.length - 1, 0)
 
-    const onAdd = async (user: PublicUser) => {
-      await dispatch(setShareRole({ id: libraryId, uid: user.uid })).unwrap?.()
+    const onAdd = async (user: PublicUser, role: 'contributor' | 'viewer' = 'viewer') => {
+      await dispatch(setShareRole({ id: libraryId, uid: user.uid, role })).unwrap?.()
     }
 
     return (
@@ -72,18 +78,21 @@ export default function ShareManager({
         {/* List */}
         <ul className="divide-y border-t border-border">
           <UserRow libraryId={libraryId} uid={ownerId} role="owner" isOwner={isOwner} />
-          {ownerFirst.filter((u: string) => u !== ownerId).map((uid: string) => (
-            <UserRow
-              key={uid}
-              libraryId={libraryId}
-              uid={uid}
-              role="member"
-              isOwner={isOwner}
-              onRemove={async () => {
-                await dispatch(setUnshareRole({ id: libraryId, uid })).unwrap?.()
-              }}
-            />
-          ))}
+          {ownerFirst.filter((u: string) => u !== ownerId).map((uid: string) => {
+            const userRole = shareRolesProp[uid] || 'viewer'
+            return (
+              <UserRow
+                key={uid}
+                libraryId={libraryId}
+                uid={uid}
+                role={userRole}
+                isOwner={isOwner}
+                onRemove={async () => {
+                  await dispatch(setUnshareRole({ id: libraryId, uid })).unwrap?.()
+                }}
+              />
+            )
+          })}
         </ul>
 
         {/* Empty */}

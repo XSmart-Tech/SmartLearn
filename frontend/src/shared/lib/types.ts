@@ -17,6 +17,7 @@ export interface Library {
   ownerId: string
   // list of user ids (excluding the owner) who the library is shared with
   share: string[]
+  shareRoles: Record<string, 'contributor' | 'viewer'>
   createdAt: number
   updatedAt: number
   cardCount?: number
@@ -27,4 +28,19 @@ export interface PublicUser {
   displayName: string
   email: string
   photoURL: string
+}
+
+export interface Notification {
+  id: string
+  type: 'card_request'
+  recipientId: string // owner uid
+  senderId: string // contributor uid
+  libraryId: string
+  data: {
+    cards: Omit<Flashcard, 'id' | 'createdAt' | 'updatedAt'>[]
+    message?: string
+  }
+  status: 'pending' | 'accepted' | 'rejected'
+  createdAt: number
+  updatedAt: number
 }

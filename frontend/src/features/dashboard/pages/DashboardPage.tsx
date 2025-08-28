@@ -28,8 +28,8 @@ export default function DashboardPage() {
     skip: !uid,
   })
 
-  // Use realtime updates
-  useRealtimeLibraries(uid)
+  // Use realtime updates only when user is authenticated
+  useRealtimeLibraries(uid ?? null)
 
   // Use RTK Query mutation for creating libraries
   const [createLibraryMutation] = useCreateLibraryMutation()
