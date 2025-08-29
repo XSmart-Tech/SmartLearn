@@ -1,5 +1,5 @@
 import * as React from "react";
-import { AppSidebar } from "@/shared/components";
+import { AppSidebar } from "@/shared/components/navigation/app-sidebar";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -26,13 +26,13 @@ export default function DashboardLayout() {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset className="h-screen overflow-hidden">
-        <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 bg-card/40 px-2 md:px-4 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+      <SidebarInset className="h-screen overflow-hidden bg-gradient-to-br from-background via-background to-muted/20">
+        <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-2 border-b border-border/50 bg-card/80 backdrop-blur-xl supports-[backdrop-filter]:bg-card/60 px-2 md:px-6 transition-all duration-300 ease-in-out shadow-sm">
           <div className="flex items-center gap-2">
-            <SidebarTrigger className="-ml-1" />
+            <SidebarTrigger className="-ml-1 hover:bg-accent/50 transition-colors duration-200 rounded-md p-1" />
             <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
             <Breadcrumb>
-              <BreadcrumbList>
+              <BreadcrumbList className="gap-1">
                 {
                   // Build breadcrumb items from route matches. Each route can define `handle.crumb` as a string or function.
                   useMatches()
@@ -57,13 +57,20 @@ export default function DashboardLayout() {
                           <BreadcrumbItem>
                             {!isLast ? (
                               <BreadcrumbLink asChild>
-                                <Link to={m.pathname ?? '#'}>{crumb}</Link>
+                                <Link
+                                  to={m.pathname ?? '#'}
+                                  className="hover:text-primary transition-colors duration-200 hover:scale-105 transform"
+                                >
+                                  {crumb}
+                                </Link>
                               </BreadcrumbLink>
                             ) : (
-                              <BreadcrumbPage>{crumb}</BreadcrumbPage>
+                              <BreadcrumbPage className="font-semibold text-foreground/90">
+                                {crumb}
+                              </BreadcrumbPage>
                             )}
                           </BreadcrumbItem>
-                          {!isLast && <BreadcrumbSeparator />}
+                          {!isLast && <BreadcrumbSeparator className="text-muted-foreground/60" />}
                         </React.Fragment>
                       )
                     })
@@ -72,11 +79,13 @@ export default function DashboardLayout() {
             </Breadcrumb>
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-2 md:gap-4 p-3 md:p-6 pt-2 md:pt-4 overflow-y-auto">
-          <Container>
+        <div className="flex flex-1 flex-col gap-4 md:gap-6 p-4 md:p-6 pt-4 md:pt-6 overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+          <Container className="max-w-full">
             <NavigationLoader />
             <Suspense fallback={<Loader />}>
-              <Outlet />
+              <div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
+                <Outlet />
+              </div>
             </Suspense>
           </Container>
         </div>

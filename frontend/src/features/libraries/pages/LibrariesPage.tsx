@@ -6,6 +6,7 @@ import type { Library } from '@/shared/lib/types'
 import { Container, ConfirmationDialog } from '@/shared/ui'
 import LibraryDialog from '@/features/libraries/components/LibraryDialog'
 import { PageHeader } from '@/shared/components'
+import { toast } from 'sonner'
 
 const LibraryCardList = lazy(() => import('@/features/libraries/components/LibraryCardList'))
 const selectUid = (s: RootState) => s.auth.user?.uid ?? null
@@ -18,6 +19,7 @@ export default function LibrariesPage() {
   const handleCreate = useCallback(
     async (name: string, description?: string) => {
       if (!uid) return
+      toast.loading('Đang tạo thư viện...')
       await dispatch(createLibrary({ uid, name, description }))
     },
     [dispatch, uid]
@@ -29,6 +31,7 @@ export default function LibrariesPage() {
 
   const onConfirmRemove = useCallback(async () => {
     if (!libToRemove) return
+    toast.loading('Đang xóa thư viện...')
     await dispatch(removeLibrary(libToRemove.id))
     setLibToRemove(null)
   }, [dispatch, libToRemove])

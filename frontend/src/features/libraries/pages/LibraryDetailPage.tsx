@@ -11,7 +11,7 @@ const ImportExport = lazy(() => import('@/shared/components').then(m => ({ defau
 const BulkAddCardsDialog = lazy(() => import('@/features/libraries/components/BulkAddCardsDialog'))
 import LibraryDialog from '@/features/libraries/components/LibraryDialog'
 import { useRealtimeCards } from '@/shared/hooks'
-import { CardListView, PageHeader } from '@/shared/components'
+import { PopoverMenu, PopoverMenuItem, PopoverMenuSeparator, CardListView, PageHeader } from '@/shared/components'
 import type { SortOption, GridColumns } from '@/shared/components'
 import {
   Button, Input, Dialog, DialogContent, DialogDescription, DialogTitle,
@@ -23,7 +23,7 @@ import {
 } from '@/shared/ui'
 import { useParams, useNavigate } from 'react-router-dom'
 import FlipDeck from '@/features/study/components/FlipDeck'
-import { Share2, Plus, BookOpen, CheckCircle, Edit } from 'lucide-react'
+import { Share2, Plus, BookOpen, CheckCircle, Edit, Upload } from 'lucide-react'
 import { addRecentLibrary } from '@/shared/lib/recent'
 
 export default function LibraryDetailPage() {
@@ -98,6 +98,7 @@ export default function LibraryDetailPage() {
       if (isOwner) {
         // Owner có thể thêm trực tiếp
         dispatch(createCard({ libraryId: id, card: cardPayload }))
+        toast.success('Đã tạo thẻ thành công')
       } else if (userRole === 'contributor') {
         // Contributor gửi request
         dispatch(createNotification({
@@ -118,12 +119,20 @@ export default function LibraryDetailPage() {
         id: editingId,
         patch: { front, back, description: description }
       }))
+      toast.success('Đã cập nhật thẻ thành công')
     }
     closeDialog()
   }
 
   const onRequestDelete = (cardId: string) => { setDeleteId(cardId); setConfirmOpen(true) }
-  const confirmDelete = () => { if (deleteId) dispatch(removeCard(deleteId)); setDeleteId(null); setConfirmOpen(false) }
+  const confirmDelete = () => { 
+    if (deleteId) {
+      dispatch(removeCard(deleteId))
+      toast.success('Đã xóa thẻ thành công')
+    }
+    setDeleteId(null)
+    setConfirmOpen(false)
+  }
 
   const hasCards = cards.length > 0
 
@@ -192,7 +201,7 @@ export default function LibraryDetailPage() {
 
   const headerActions = (
     <>
-      {/* Study Actions */}
+      {/* Study Actions - Always visible */}
       {lib && (
         <>
           <Button
@@ -201,10 +210,10 @@ export default function LibraryDetailPage() {
               try { await addRecentLibrary(lib.id) } catch { /* ignore */ };
               navigate('/app/study')
             }}
-            className="bg-primary hover:bg-primary/90"
+            className="bg-primary hover:bg-primary/90 text-xs sm:text-sm px-2 sm:px-3"
             aria-label="Bắt đầu học thư viện này"
           >
-            <BookOpen className="mr-2 h-4 w-4" /> Học
+            <BookOpen className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" /> <span className="hidden xs:inline">Học</span>
           </Button>
           <Button
             variant="outline"
@@ -212,93 +221,130 @@ export default function LibraryDetailPage() {
               try { await addRecentLibrary(lib.id) } catch { /* ignore */ };
               navigate('/app/study/quiz')
             }}
+            className="text-xs sm:text-sm px-2 sm:px-3"
             aria-label="Làm bài kiểm tra"
           >
-            <CheckCircle className="mr-2 h-4 w-4" /> Kiểm tra
+            <CheckCircle className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" /> <span className="hidden xs:inline">Kiểm tra</span>
           </Button>
         </>
       )}
 
-      {/* Management Actions - For Owner and Contributor */}
-      {canAddCards && (
-        <>
-          <Button onClick={openAdd} className="bg-success hover:bg-success/90" aria-label="Thêm thẻ mới vào thư viện">
-            <Plus className="mr-2 h-4 w-4" /> Thêm thẻ
-          </Button>
-          <Suspense fallback={<Button variant="outline" disabled>Thêm nhiều thẻ</Button>}>
-            <BulkAddCardsDialog libraryId={id!} />
-          </Suspense>
-        </>
-      )}
-
-      {/* Owner-only Actions */}
-      {isOwner && (
-        <>
-          <Suspense fallback={<Button variant="outline" disabled>Import/Export</Button>}>
-            <ImportExport
-              cards={cards}
-              onImport={(list: Flashcard[]) => {
-                if (!id || !lib || !user) return
-                
-                if (isOwner) {
-                  // Owner có thể import trực tiếp
-                  for (const c of list) {
-                    const cardPayload: Omit<Flashcard, 'id' | 'createdAt' | 'updatedAt'> = {
-                      front: c.front, back: c.back, description: c.description, libraryId: id
-                    }
-                    dispatch(createCard({ libraryId: id, card: cardPayload }))
-                  }
-                } else if (userRole === 'contributor') {
-                  // Contributor gửi request
-                  const cardPayloads: Omit<Flashcard, 'id' | 'createdAt' | 'updatedAt'>[] = list.map((c: Flashcard) => ({
-                    front: c.front, back: c.back, description: c.description, libraryId: id
-                  }))
-                  
-                  dispatch(createNotification({
-                    type: 'card_request',
-                    recipientId: lib.ownerId,
-                    senderId: user.uid,
-                    libraryId: id,
-                    status: 'pending',
-                    data: {
-                      cards: cardPayloads,
-                      message: `Yêu cầu import ${list.length} thẻ vào thư viện`
-                    }
-                  }))
-                  toast.success(`Đã gửi yêu cầu import ${list.length} thẻ đến chủ thư viện`)
+      {/* More Actions in Popover */}
+      <PopoverMenu>
+        {/* Management Actions - For Owner and Contributor */}
+        {canAddCards && (
+          <>
+            <PopoverMenuItem onClick={openAdd}>
+              <Plus className="mr-2 h-3 w-3" />
+              Thêm thẻ
+            </PopoverMenuItem>
+            <Suspense fallback={
+              <PopoverMenuItem disabled>
+                <Plus className="mr-2 h-3 w-3" />
+                Thêm nhiều thẻ
+              </PopoverMenuItem>
+            }>
+              <BulkAddCardsDialog
+                libraryId={id!}
+                trigger={
+                  <PopoverMenuItem>
+                    <Plus className="mr-2 h-3 w-3" />
+                    Thêm nhiều thẻ
+                  </PopoverMenuItem>
                 }
-              }}
+              />
+            </Suspense>
+            <PopoverMenuSeparator />
+          </>
+        )}
+
+        {/* Owner-only Actions */}
+        {isOwner && (
+          <>
+            <Suspense fallback={
+              <PopoverMenuItem disabled>
+                <Upload className="mr-2 h-3 w-3" />
+                Import/Export
+              </PopoverMenuItem>
+            }>
+              <ImportExport
+                cards={cards}
+                inPopover={true}
+                onImport={(list: Flashcard[]) => {
+                  if (!id || !lib || !user) return
+
+                  if (isOwner) {
+                    // Owner có thể import trực tiếp
+                    for (const c of list) {
+                      const cardPayload: Omit<Flashcard, 'id' | 'createdAt' | 'updatedAt'> = {
+                        front: c.front, back: c.back, description: c.description, libraryId: id
+                      }
+                      dispatch(createCard({ libraryId: id, card: cardPayload }))
+                    }
+                  } else if (userRole === 'contributor') {
+                    // Contributor gửi request
+                    const cardPayloads: Omit<Flashcard, 'id' | 'createdAt' | 'updatedAt'>[] = list.map((c: Flashcard) => ({
+                      front: c.front, back: c.back, description: c.description, libraryId: id
+                    }))
+
+                    dispatch(createNotification({
+                      type: 'card_request',
+                      recipientId: lib.ownerId,
+                      senderId: user.uid,
+                      libraryId: id,
+                      status: 'pending',
+                      data: {
+                        cards: cardPayloads,
+                        message: `Yêu cầu import ${list.length} thẻ vào thư viện`
+                      }
+                    }))
+                    toast.success(`Đã gửi yêu cầu import ${list.length} thẻ đến chủ thư viện`)
+                  }
+                }}
+              />
+            </Suspense>
+            {lib && (
+              <LibraryDialog
+                mode="edit"
+                library={lib}
+                onUpdate={async (id: string, name: string, description: string) => {
+                  await dispatch(updateLibrary({ id, patch: { name, description } }))
+                }}
+              >
+                <PopoverMenuItem>
+                  <Edit className="mr-2 h-3 w-3" />
+                  Chỉnh sửa thư viện
+                </PopoverMenuItem>
+              </LibraryDialog>
+            )}
+            <PopoverMenuSeparator />
+          </>
+        )}
+
+        {/* Share Action - Only for Owner */}
+        {isOwner && lib && (
+          <Suspense fallback={
+            <PopoverMenuItem disabled>
+              <Share2 className="mr-2 h-3 w-3" />
+              Chia sẻ
+            </PopoverMenuItem>
+          }>
+            <ShareManager
+              libraryId={lib.id}
+              ownerId={lib.ownerId}
+              share={lib.share}
+              shareRoles={lib.shareRoles}
+              isOwner={isOwner}
+              trigger={
+                <PopoverMenuItem>
+                  <Share2 className="mr-2 h-3 w-3" />
+                  Chia sẻ thư viện
+                </PopoverMenuItem>
+              }
             />
           </Suspense>
-          {lib && (
-            <LibraryDialog
-              mode="edit"
-              library={lib}
-              onUpdate={async (id: string, name: string, description: string) => {
-                await dispatch(updateLibrary({ id, patch: { name, description } }))
-              }}
-            >
-              <Button variant="outline" aria-label="Chỉnh sửa thư viện">
-                <Edit className="mr-2 h-4 w-4" /> Chỉnh sửa
-              </Button>
-            </LibraryDialog>
-          )}
-        </>
-      )}
-
-      {/* Share Action - Only for Owner */}
-      {isOwner && lib && (
-        <Suspense fallback={<Button variant="secondary" disabled><Share2 className="h-4 w-4" /></Button>}>
-          <ShareManager
-            libraryId={lib.id}
-            ownerId={lib.ownerId}
-            share={lib.share}
-            shareRoles={lib.shareRoles}
-            isOwner={isOwner}
-            trigger={<Button variant="secondary" aria-label="Chia sẻ thư viện"><Share2 className="h-4 w-4" /></Button>}
-          />
-        </Suspense>
-      )}
+        )}
+      </PopoverMenu>
     </>
   )
 

@@ -8,9 +8,10 @@ import { useTranslation } from "react-i18next"
 type Props = {
   cards: Flashcard[]
   initialIndex?: number
+  onCardComplete?: (result: boolean) => void
 }
 
-export default function FlipDeck({ cards, initialIndex = 0 }: Props) {
+export default function FlipDeck({ cards, initialIndex = 0, onCardComplete }: Props) {
   const { t } = useTranslation()
   const [order, setOrder] = useState<number[]>([])
   const [isShuffled, setIsShuffled] = useState(false)
@@ -104,16 +105,18 @@ export default function FlipDeck({ cards, initialIndex = 0 }: Props) {
     const s = new Set(known)
     s.add(current.id)
     setKnown(s)
+    onCardComplete?.(true)
     next()
-  }, [current, known, next])
+  }, [current, known, next, onCardComplete])
 
   const markUnknown = useCallback(() => {
     if (!current) return
     const s = new Set(known)
     s.delete(current.id)
     setKnown(s)
+    onCardComplete?.(false)
     next()
-  }, [current, known, next])
+  }, [current, known, next, onCardComplete])
 
   const cardRef = useRef<HTMLDivElement | null>(null)
 

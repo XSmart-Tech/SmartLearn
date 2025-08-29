@@ -11,12 +11,12 @@ export function HeroSection({ onGoToDashboard, onGoToLibraries }: HeroSectionPro
   const { t } = useTranslation()
 
   return (
-    <Card className="rounded-2xl border bg-white/70 p-8 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-white/60">
+    <Card className="rounded-2xl border bg-card/70 p-8 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/60">
       <CardContent>
         <div className="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
           <div className="max-w-2xl">
             <H1 className="text-left leading-tight">
-              <span className="bg-gradient-to-r from-indigo-500 via-violet-500 to-emerald-500 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-primary via-accent to-success bg-clip-text text-transparent">
                 {t('home.heroTitle')}
               </span>
             </H1>

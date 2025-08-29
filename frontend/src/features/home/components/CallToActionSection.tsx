@@ -10,7 +10,7 @@ export function CallToActionSection({ onGoToDashboard, onGoToLibraries }: CallTo
   const { t } = useTranslation()
 
   return (
-    <div className="rounded-2xl border bg-gradient-to-r from-indigo-50 to-emerald-50 p-6 text-center">
+    <div className="rounded-2xl border bg-gradient-to-r from-muted to-accent/20 p-6 text-center">
       <H3>{t('home.readyToStart')}</H3>
       <P className="text-muted-foreground">{t('home.gettingStarted')}</P>
       <div className="mt-3 flex justify-center gap-2">

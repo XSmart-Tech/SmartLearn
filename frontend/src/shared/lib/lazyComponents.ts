@@ -16,6 +16,4 @@ export const LibraryLayout = lazy(() => import('@/shared/layouts/LibraryLayout')
 export const StudyLayout = lazy(() => import('@/shared/layouts/StudyLayout'))
 
 // Lazy load shared components
-export const NotFoundPage = lazy(() => import('@/shared/pages/NotFoundPage'))
-export const Loader = lazy(() => import('@/shared/ui/loader').then(m => ({ default: m.default })))
 export const Toaster = lazy(() => import('@/shared/ui').then(m => ({ default: m.Toaster })))

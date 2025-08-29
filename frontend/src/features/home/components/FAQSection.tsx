@@ -6,7 +6,7 @@ export function FAQSection() {
   const { t } = useTranslation()
 
   return (
-    <Card className="rounded-2xl border bg-white p-6 shadow-sm">
+    <Card className="rounded-2xl border bg-card p-6 shadow-sm">
       <CardContent>
         <H3 className="mb-3">Câu hỏi thường gặp</H3>
         <div className="space-y-2">

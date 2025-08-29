@@ -15,6 +15,7 @@ import {
 import { db } from '@/shared/lib/firebase'
 import type { Library } from '@/shared/lib/types'
 import { getDocsCacheFirst, getDocCacheFirst } from '@/shared/lib/firestoreCache'
+import { toast } from 'sonner'
 
 /* ================= Thunks ================= */
 
@@ -171,6 +172,7 @@ const slice = createSlice({
     b.addCase(fetchLibraries.rejected, (s, a) => {
       s.status = 'error'
       s.error = a.error?.message ?? 'Không tải được danh sách thư viện.'
+      toast.error('Không thể tải danh sách thư viện')
     })
 
     b.addCase(fetchLibraryById.fulfilled, (s, a) => {
@@ -182,16 +184,31 @@ const slice = createSlice({
     b.addCase(createLibrary.fulfilled, (s, a) => {
       s.items[a.payload.id] = a.payload
       if (!s.order.includes(a.payload.id)) s.order.unshift(a.payload.id)
+      toast.success(`Đã tạo thư viện "${a.payload.name}" thành công`)
+    })
+
+    b.addCase(createLibrary.rejected, (_s, a) => {
+      toast.error(a.error?.message ?? 'Không thể tạo thư viện')
     })
 
     b.addCase(updateLibrary.fulfilled, (s, a) => {
       const t = s.items[a.payload.id]
       if (t) Object.assign(t, a.payload.patch)
+      toast.success('Đã cập nhật thư viện thành công')
+    })
+
+    b.addCase(updateLibrary.rejected, (_s, a) => {
+      toast.error(a.error?.message ?? 'Không thể cập nhật thư viện')
     })
 
     b.addCase(removeLibrary.fulfilled, (s, a) => {
       delete s.items[a.payload]
       s.order = s.order.filter((id) => id !== a.payload)
+      toast.success('Đã xóa thư viện thành công')
+    })
+
+    b.addCase(removeLibrary.rejected, (_s, a) => {
+      toast.error(a.error?.message ?? 'Không thể xóa thư viện')
     })
 
     b.addCase(setShareRole.fulfilled, (s, a) => {

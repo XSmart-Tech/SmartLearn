@@ -3,6 +3,7 @@ import { addDoc, collection, deleteDoc, doc, query, updateDoc, where } from 'fir
 import { db } from '@/shared/lib/firebase'
 import type { Flashcard } from '@/shared/lib/types'
 import { getDocsCacheFirst } from '@/shared/lib/firestoreCache'
+import { toast } from 'sonner'
 
 /** Load all cards for a libraryId */
 export const fetchCards = createAsyncThunk<Flashcard[], string>(
@@ -103,9 +104,20 @@ const cardsSlice = createSlice({
       const libId = a.meta.arg as string
       s.byLibStatus[libId] = 'error'
       s.byLibError[libId] = a.error?.message ?? 'Không tải được thẻ.'
+      toast.error('Không thể tải danh sách thẻ')
     })
 
+    b.addCase(createCard.fulfilled, (s, a) => {
+      const libId = a.payload.libraryId
+      if (!s.byLib[libId]) s.byLib[libId] = []
+      s.byLib[libId].unshift(a.payload)
+      s.cardToLib[a.payload.id] = libId
+      toast.success('Đã tạo thẻ thành công')
+    })
 
+    b.addCase(createCard.rejected, (_s, a) => {
+      toast.error(a.error?.message ?? 'Không thể tạo thẻ')
+    })
 
     b.addCase(updateCard.fulfilled, (s, a) => {
       const { id, patch } = a.payload
@@ -120,6 +132,11 @@ const cardsSlice = createSlice({
           if (idx >= 0) { s.byLib[key][idx] = { ...s.byLib[key][idx], ...patch }; break }
         }
       }
+      toast.success('Đã cập nhật thẻ thành công')
+    })
+
+    b.addCase(updateCard.rejected, (_s, a) => {
+      toast.error(a.error?.message ?? 'Không thể cập nhật thẻ')
     })
 
     b.addCase(removeCard.fulfilled, (s, a) => {
@@ -133,6 +150,11 @@ const cardsSlice = createSlice({
         }
       }
       delete s.cardToLib[id]
+      toast.success('Đã xóa thẻ thành công')
+    })
+
+    b.addCase(removeCard.rejected, (_s, a) => {
+      toast.error(a.error?.message ?? 'Không thể xóa thẻ')
     })
   }
 })

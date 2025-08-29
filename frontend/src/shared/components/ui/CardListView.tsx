@@ -104,7 +104,7 @@ export default function CardListView<T>({
 
   const renderSearchBox = () => (
     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-      <div className="relative w-full sm:max-w-md">
+      <div className="relative w-full sm:max-w-md md:max-w-xs lg:max-w-md">
         <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
           aria-label={t('common.search')}

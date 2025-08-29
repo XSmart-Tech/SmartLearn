@@ -17,7 +17,7 @@ export default function HomePage() {
 
   function goIfAuth(path: string, message: string) {
     if (!user) {
-      toast(message)
+      toast.info(message)
       return
     }
     navigate(path)

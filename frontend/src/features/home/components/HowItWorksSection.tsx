@@ -6,7 +6,7 @@ export function HowItWorksSection() {
   const { t } = useTranslation()
 
   return (
-    <div className="rounded-2xl border bg-white p-6 shadow-sm">
+    <div className="rounded-2xl border bg-card p-6 shadow-sm">
       <H3 className="mb-3">Cách hoạt động</H3>
       <div className="grid gap-3 md:grid-cols-3">
         <div className="rounded-lg border p-4">

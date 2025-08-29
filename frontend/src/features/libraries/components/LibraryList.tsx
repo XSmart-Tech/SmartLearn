@@ -9,6 +9,7 @@ import { createSelector } from "@reduxjs/toolkit"
 import LibraryDialog from "./LibraryDialog"
 import { Folder, FolderOpen, Shield, Trash2, Edit } from "lucide-react"
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 
 /* ========= Selectors (ổn định tham chiếu) ========= */
 const selectUid = (s: RootState) => s.auth.user?.uid ?? null
@@ -150,6 +151,7 @@ const LibraryItem = memo(
                     mode="edit"
                     library={lib}
                     onUpdate={async (id: string, name: string, description: string) => {
+                      toast.loading('Đang cập nhật thư viện...')
                       await dispatch(updateLibrary({ id, patch: { name, description } }))
                     }}
                   >

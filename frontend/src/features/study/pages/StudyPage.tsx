@@ -18,12 +18,15 @@ import {
   PopoverTrigger,
   PopoverContent,
   Switch,
-  ToggleGroup,
-  ToggleGroupItem,
   Container,
+  Checkbox,
 } from '@/shared/ui'
 const FlipDeck = lazy(() => import('@/features/study/components/FlipDeck'))
-import { Loader2, RefreshCw, Search } from 'lucide-react'
+const LearnMode = lazy(() => import('@/features/study/components/LearnMode'))
+const WriteMode = lazy(() => import('@/features/study/components/WriteMode'))
+const TestMode = lazy(() => import('@/features/study/components/TestMode'))
+const MatchMode = lazy(() => import('@/features/study/components/MatchMode'))
+import { Loader2, Search } from 'lucide-react'
 
 /**
  * StudyPage – merged Study + Quiz in one page (no route change)
@@ -32,7 +35,7 @@ import { Loader2, RefreshCw, Search } from 'lucide-react'
  * - Keeps localStorage keys from original pages
  */
 
-type Mode = 'mcq' | 'fill' | 'both'
+type StudyMode = 'flashcards' | 'learn' | 'write' | 'test' | 'match'
 
 type ViewTab = 'study' | 'quiz'
 
@@ -115,6 +118,94 @@ export default function StudyPageMerged() {
   // ===== Study section state =====
   const [shuffleSeed, setShuffleSeed] = useState(0)
   const [shuffleOn, setShuffleOn] = useState(false)
+  const [selectedStudyModes, setSelectedStudyModes] = useState<StudyMode[]>(() => {
+    const saved = localStorage.getItem('study.selectedModes')
+    return saved ? JSON.parse(saved) : ['flashcards']
+  })
+
+  // Smart mode switching algorithm
+  const [currentMode, setCurrentMode] = useState<StudyMode>('flashcards')
+  const [modeStats, setModeStats] = useState<Record<StudyMode, { correct: number; total: number; streak: number }>>(() => {
+    const saved = localStorage.getItem('study.modeStats')
+    return saved ? JSON.parse(saved) : {
+      flashcards: { correct: 0, total: 0, streak: 0 },
+      learn: { correct: 0, total: 0, streak: 0 },
+      write: { correct: 0, total: 0, streak: 0 },
+      test: { correct: 0, total: 0, streak: 0 },
+      match: { correct: 0, total: 0, streak: 0 }
+    }
+  })
+
+  useEffect(() => {
+    localStorage.setItem('study.selectedModes', JSON.stringify(selectedStudyModes))
+  }, [selectedStudyModes])
+
+  useEffect(() => {
+    localStorage.setItem('study.modeStats', JSON.stringify(modeStats))
+  }, [modeStats])
+
+  // Smart algorithm to determine next mode
+  const getNextMode = useCallback((lastResult: boolean): StudyMode => {
+    // If user answered incorrectly, stay in current mode to practice more
+    if (!lastResult) {
+      return currentMode
+    }
+
+    // Only switch modes if user answered correctly
+    if (selectedStudyModes.length === 1) return selectedStudyModes[0]
+
+    const currentStats = modeStats[currentMode]
+    const updatedStats = {
+      ...currentStats,
+      total: currentStats.total + 1,
+      correct: currentStats.correct + (lastResult ? 1 : 0),
+      streak: lastResult ? currentStats.streak + 1 : 0
+    }
+
+    setModeStats(prev => ({
+      ...prev,
+      [currentMode]: updatedStats
+    }))
+
+    // Algorithm logic:
+    // 1. If user is struggling (low accuracy), switch to easier modes
+    // 2. If user is doing well, introduce more challenging modes
+    // 3. Balance between different learning approaches
+
+    const accuracy = updatedStats.total > 0 ? updatedStats.correct / updatedStats.total : 0
+    const availableModes = selectedStudyModes.filter(mode => mode !== currentMode)
+
+    if (availableModes.length === 0) return currentMode
+
+    // If struggling (accuracy < 0.6), prefer simpler modes
+    if (accuracy < 0.6) {
+      const simpleModes = availableModes.filter(mode =>
+        mode === 'flashcards' || mode === 'learn'
+      )
+      if (simpleModes.length > 0) {
+        return simpleModes[Math.floor(Math.random() * simpleModes.length)]
+      }
+    }
+
+    // If doing well (accuracy > 0.8), try more challenging modes
+    if (accuracy > 0.8 && updatedStats.streak >= 3) {
+      const challengingModes = availableModes.filter(mode =>
+        mode === 'test' || mode === 'write'
+      )
+      if (challengingModes.length > 0) {
+        return challengingModes[Math.floor(Math.random() * challengingModes.length)]
+      }
+    }
+
+    // Default: random selection with weights based on past performance
+    const weightedModes = availableModes.flatMap(mode => {
+      const modeAccuracy = modeStats[mode].total > 0 ? modeStats[mode].correct / modeStats[mode].total : 0.5
+      const weight = Math.max(0.1, 1 - modeAccuracy) // Prefer modes with lower accuracy (need more practice)
+      return Array(Math.ceil(weight * 10)).fill(mode)
+    })
+
+    return weightedModes[Math.floor(Math.random() * weightedModes.length)] || availableModes[0]
+  }, [selectedStudyModes, currentMode, modeStats])
 
   const { query, setQuery, filtered: searchFiltered } = useSearch(cards, {
     searchFields: ['front', 'back', 'description']
@@ -132,10 +223,10 @@ export default function StudyPageMerged() {
   // ===== Quiz section state =====
   const [i, setI] = useState(0)
   const [show, setShow] = useState(false)
-  const [mode, setMode] = useState<Mode>(() => (localStorage.getItem('quiz.mode') as Mode) || 'mcq')
+  const [mode, setMode] = useState<'mcq' | 'fill' | 'both'>(() => (localStorage.getItem('quiz.mode') as 'mcq' | 'fill' | 'both') || 'mcq') // eslint-disable-line @typescript-eslint/no-unused-vars
   useEffect(() => { localStorage.setItem('quiz.mode', mode) }, [mode])
 
-  const [count, setCount] = useState<number>(() => {
+  const [count, setCount] = useState<number>(() => { // eslint-disable-line @typescript-eslint/no-unused-vars
     const v = parseInt(localStorage.getItem('quiz.count') || '')
     return Number.isFinite(v) && v > 0 ? v : 10
   })
@@ -174,7 +265,7 @@ export default function StudyPageMerged() {
     return arr
   }
 
-  const startQuiz = useCallback(() => {
+  const startQuiz = useCallback(() => { // eslint-disable-line @typescript-eslint/no-unused-vars
     const all = shuffleInPlace([...cards])
     const take = Math.min(count, all.length)
     setQuizCards(all.slice(0, take))
@@ -285,24 +376,64 @@ export default function StudyPageMerged() {
                 />
               </div>
 
-              <div className="flex items-center gap-2">
-                <Small>{t('study.mode')}</Small>
-                <ToggleGroup type="single" value={mode} onValueChange={(v) => v && setMode(v as Mode)} className="ml-2">
-                  <ToggleGroupItem value="mcq">MCQ</ToggleGroupItem>
-                  <ToggleGroupItem value="fill">Fill</ToggleGroupItem>
-                  <ToggleGroupItem value="both">Both</ToggleGroupItem>
-                </ToggleGroup>
-              </div>
+              <div className="space-y-2">
+                <div>
+                  <Small>{t('study.studyMode')}</Small>
+                  <p className="text-xs text-muted-foreground mt-1">{t('study.selectStudyModes')}</p>
+                </div>
 
-              <div className="flex items-center gap-2">
-                <Small>{t('study.questionCount')}</Small>
-                <Input
-                  type="number"
-                  value={count}
-                  onChange={(e) => setCount(Math.max(1, Number(e.target.value) || 1))}
-                  className="w-28"
-                />
-                <Small className="text-muted-foreground">{t('study.cardsAvailable', { count: cards.length })}</Small>
+                {/* Current Mode Display */}
+                <div className="p-3 bg-primary/10 rounded-lg border">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">
+                        {currentMode === 'flashcards' && '📚 ' + t('study.flashcards')}
+                        {currentMode === 'learn' && '🧠 ' + t('study.learn')}
+                        {currentMode === 'write' && '✍️ ' + t('study.write')}
+                        {currentMode === 'test' && '📝 ' + t('study.test')}
+                        {currentMode === 'match' && '🎯 ' + t('study.match')}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        ({t('study.currentMode')})
+                      </span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {modeStats[currentMode].total > 0
+                        ? `${Math.round((modeStats[currentMode].correct / modeStats[currentMode].total) * 100)}%`
+                        : '0%'
+                      }
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { value: 'flashcards', label: '📚 ' + t('study.flashcards') },
+                    { value: 'learn', label: '🧠 ' + t('study.learn') },
+                    { value: 'write', label: '✍️ ' + t('study.write') },
+                    { value: 'test', label: '📝 ' + t('study.test') },
+                    { value: 'match', label: '🎯 ' + t('study.match') },
+                  ].map((mode) => (
+                    <label key={mode.value} className="flex items-center space-x-2 cursor-pointer">
+                      <Checkbox
+                        checked={selectedStudyModes.includes(mode.value as StudyMode)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setSelectedStudyModes(prev => [...prev, mode.value as StudyMode])
+                          } else {
+                            setSelectedStudyModes(prev => prev.filter(m => m !== mode.value))
+                            // If removing current mode, switch to first available
+                            if (currentMode === mode.value && selectedStudyModes.length > 1) {
+                              const remaining = selectedStudyModes.filter(m => m !== mode.value)
+                              setCurrentMode(remaining[0])
+                            }
+                          }
+                        }}
+                      />
+                      <span className="text-sm">{mode.label}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
 
               <div className="flex items-center gap-4">
@@ -310,8 +441,6 @@ export default function StudyPageMerged() {
                   <Small>{t('study.shuffle')}</Small>
                   <Switch checked={shuffleOn} onCheckedChange={() => { setShuffleOn(s => !s); setShuffleSeed(x => x + 1) }} />
                 </div>
-                <Button variant="outline" onClick={() => libId && dispatch(fetchCards(libId))}><RefreshCw className="mr-2 h-4 w-4" />{t('study.reload')}</Button>
-                <Button onClick={startQuiz} disabled={cards.length === 0}>{t('study.start')}</Button>
               </div>
             </div>
           </PopoverContent>
@@ -338,13 +467,88 @@ export default function StudyPageMerged() {
       {/* STUDY content */}
       {tab === 'study' && cardsStatus === 'ready' && (
         filtered.length > 0 ? (
-          <div className="rounded-2xl border p-4 bg-card">
-            <div className="mb-3 flex items-center justify-between">
-              <Small className="text-muted-foreground">{t('study.cardsCount', { count: filtered.length })}</Small>
+          <div className="space-y-4">
+            {/* Current Mode Indicator */}
+            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-semibold">
+                  {currentMode === 'flashcards' && '📚 Flashcards'}
+                  {currentMode === 'learn' && '🧠 Learn'}
+                  {currentMode === 'write' && '✍️ Write'}
+                  {currentMode === 'test' && '📝 Test'}
+                  {currentMode === 'match' && '🎯 Match'}
+                </span>
+                {selectedStudyModes.length > 1 && (
+                  <span className="text-sm text-muted-foreground">
+                    (Smart switching enabled)
+                  </span>
+                )}
+              </div>
+
+              {/* Mode Stats */}
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <span>Accuracy: {modeStats[currentMode].total > 0
+                  ? Math.round((modeStats[currentMode].correct / modeStats[currentMode].total) * 100)
+                  : 0}%</span>
+                <span>Streak: {modeStats[currentMode].streak}</span>
+              </div>
             </div>
-            <Suspense fallback={<Loader2 className="animate-spin" />}>
-              <FlipDeck cards={filtered} />
-            </Suspense>
+
+            {/* Study Mode Content */}
+            <div className="rounded-2xl border p-4 bg-card">
+              <Suspense fallback={<Loader2 className="animate-spin" />}>
+                {currentMode === 'flashcards' && (
+                  <FlipDeck
+                    cards={filtered}
+                    onCardComplete={(result) => {
+                      const nextMode = getNextMode(result)
+                      setCurrentMode(nextMode)
+                    }}
+                  />
+                )}
+                {currentMode === 'learn' && (
+                  <LearnMode
+                    cards={filtered}
+                    onComplete={(results) => {
+                      // Calculate overall result
+                      const accuracy = results.total > 0 ? results.correct / results.total : 0
+                      const nextMode = getNextMode(accuracy > 0.5)
+                      setCurrentMode(nextMode)
+                    }}
+                  />
+                )}
+                {currentMode === 'write' && (
+                  <WriteMode
+                    cards={filtered}
+                    onComplete={(results) => {
+                      const accuracy = results.total > 0 ? results.correct / results.total : 0
+                      const nextMode = getNextMode(accuracy > 0.5)
+                      setCurrentMode(nextMode)
+                    }}
+                  />
+                )}
+                {currentMode === 'test' && (
+                  <TestMode
+                    cards={filtered}
+                    onComplete={(results) => {
+                      const accuracy = results.total > 0 ? results.correct / results.total : 0
+                      const nextMode = getNextMode(accuracy > 0.5)
+                      setCurrentMode(nextMode)
+                    }}
+                  />
+                )}
+                {currentMode === 'match' && (
+                  <MatchMode
+                    cards={filtered}
+                    onComplete={(results) => {
+                      const accuracy = results.total > 0 ? results.correct / results.total : 0
+                      const nextMode = getNextMode(accuracy > 0.5)
+                      setCurrentMode(nextMode)
+                    }}
+                  />
+                )}
+              </Suspense>
+            </div>
           </div>
         ) : (
           <div className="rounded-2xl border p-10 text-center bg-card">

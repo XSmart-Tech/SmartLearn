@@ -123,8 +123,8 @@ export default function BulkAddCardsDialog({ libraryId, trigger }: BulkAddCardsD
             {trigger ? (
                 <div onClick={() => setOpen(true)}>{trigger}</div>
             ) : (
-                <Button onClick={() => setOpen(true)} variant="outline">
-                    <Plus className="mr-2 h-4 w-4" /> Thêm nhiều thẻ
+                <Button onClick={() => setOpen(true)} variant="outline" className="text-xs sm:text-sm px-2 sm:px-3">
+                    <Plus className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" /> <span className="hidden xs:inline">Thêm nhiều thẻ</span>
                 </Button>
             )}
             <DialogContent className="max-w-2xl">
