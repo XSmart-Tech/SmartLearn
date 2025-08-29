@@ -18,6 +18,7 @@ import {
 } from '@/shared/ui'
 import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
+import { useTranslation } from 'react-i18next'
 
 interface BulkAddCardsDialogProps {
     libraryId: string
@@ -25,6 +26,7 @@ interface BulkAddCardsDialogProps {
 }
 
 export default function BulkAddCardsDialog({ libraryId, trigger }: BulkAddCardsDialogProps) {
+    const { t } = useTranslation()
     const [open, setOpen] = useState(false)
     const [text, setText] = useState('')
     const [error, setError] = useState('')
@@ -101,10 +103,10 @@ export default function BulkAddCardsDialog({ libraryId, trigger }: BulkAddCardsD
                 setOpen(false)
             } else {
                 // Viewer không có quyền
-                setError('Bạn không có quyền thêm thẻ vào thư viện này')
+                setError(t('common.noPermissionToAddCards'))
             }
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Lỗi khi parse thẻ')
+            setError(err instanceof Error ? err.message : t('common.errorParsingCards'))
         }
     }
 

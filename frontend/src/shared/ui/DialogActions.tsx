@@ -1,4 +1,5 @@
 import { Button } from '@/shared/ui'
+import { useTranslation } from 'react-i18next'
 
 interface DialogActionsProps {
   onCancel: () => void
@@ -15,21 +16,27 @@ export function DialogActions({
   onSave,
   canSave,
   isSubmitting = false,
-  cancelText = 'Hủy',
-  saveText = 'Lưu',
-  loadingText = 'Đang lưu...'
+  cancelText,
+  saveText,
+  loadingText
 }: DialogActionsProps) {
+  const { t } = useTranslation()
+
+  const defaultCancelText = cancelText ?? t('common.cancel')
+  const defaultSaveText = saveText ?? t('common.save')
+  const defaultLoadingText = loadingText ?? t('common.loadingSave')
+
   return (
     <div className="flex flex-col sm:flex-row sm:justify-end gap-2">
       <Button onClick={onCancel} variant="outline" disabled={isSubmitting}>
-        {cancelText}
+        {defaultCancelText}
       </Button>
       <Button
         disabled={!canSave || isSubmitting}
         onClick={onSave}
-        className="bg-gray-900 text-white disabled:opacity-50"
+        className="bg-primary text-primary-foreground disabled:opacity-50"
       >
-        {isSubmitting ? loadingText : saveText}
+        {isSubmitting ? defaultLoadingText : defaultSaveText}
       </Button>
     </div>
   )

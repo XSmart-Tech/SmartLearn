@@ -1,9 +1,9 @@
 import { Dialog } from '@/shared/ui'
-import { useUserSelection } from '@/shared/hooks/useUserSelection'
-import { UserSelectionForm } from '@/shared/components/UserSelectionForm'
+import { useUserSelection } from '@/shared/hooks'
+import { UserSelectionForm } from '@/shared/components'
 import { DialogActions } from '@/shared/ui/DialogActions'
 import { validateUserSelection } from '@/shared/lib/validation'
-import { DIALOG_TEXTS } from '@/shared/lib/constants'
+import { useTranslation } from 'react-i18next'
 
 interface ShareDialogProps {
   open: boolean
@@ -13,6 +13,7 @@ interface ShareDialogProps {
 
 export default function ShareDialog({ open, onClose, onShare }: ShareDialogProps) {
   const { target, setTarget, isSubmitting, setIsSubmitting, reset } = useUserSelection()
+  const { t } = useTranslation()
 
   const handleShare = async () => {
     if (!target || !onShare) return
@@ -44,9 +45,9 @@ export default function ShareDialog({ open, onClose, onShare }: ShareDialogProps
           onSave={handleShare}
           canSave={validateUserSelection(target)}
           isSubmitting={isSubmitting}
-          saveText={DIALOG_TEXTS.SAVE}
-          cancelText={DIALOG_TEXTS.CANCEL}
-          loadingText={DIALOG_TEXTS.LOADING}
+          saveText={t('common.save')}
+          cancelText={t('common.cancel')}
+          loadingText={t('common.processing')}
         />
       </div>
     </Dialog>

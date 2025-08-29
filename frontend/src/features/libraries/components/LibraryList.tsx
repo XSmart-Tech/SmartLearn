@@ -8,6 +8,7 @@ import type { Library } from "@/shared/lib/types"
 import { createSelector } from "@reduxjs/toolkit"
 import LibraryDialog from "./LibraryDialog"
 import { Folder, FolderOpen, Shield, Trash2, Edit } from "lucide-react"
+import { useTranslation } from 'react-i18next'
 
 /* ========= Selectors (ổn định tham chiếu) ========= */
 const selectUid = (s: RootState) => s.auth.user?.uid ?? null
@@ -189,6 +190,7 @@ export default function LibraryList({
 }: {
   onAskRemove: (lib: Library) => void
 }) {
+  const { t } = useTranslation()
   const dispatch = useDispatch<AppDispatch>()
   const uid = useSelector(selectUid)
   const status = useSelector(selectStatus)
@@ -224,13 +226,13 @@ export default function LibraryList({
     return (
       <section className="space-y-4">
         <div className="rounded-2xl border bg-red-50 p-4 text-red-700 ring-1 ring-red-200">
-          <Large className="block text-red-800">Không tải được danh sách</Large>
+          <Large className="block text-red-800">{t('common.failedToLoadList')}</Large>
           <Small className="block">
-            {error ?? "Đã xảy ra lỗi khi tải danh sách."}
+            {error ?? t('common.error')}
           </Small>
           <div className="mt-3">
             <Button size="sm" onClick={() => uid && dispatch(fetchLibraries(uid))}>
-              Thử lại
+              {t('common.tryAgain')}
             </Button>
           </div>
         </div>

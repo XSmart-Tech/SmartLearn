@@ -3,6 +3,7 @@ import type { Flashcard } from "@/shared/lib/types"
 import FlipCard from "./FlipCard"
 import { Play, Pause, Shuffle, ChevronLeft, ChevronRight, Repeat } from "lucide-react"
 import { Button } from "@/shared/ui"
+import { useTranslation } from "react-i18next"
 
 type Props = {
   cards: Flashcard[]
@@ -10,6 +11,7 @@ type Props = {
 }
 
 export default function FlipDeck({ cards, initialIndex = 0 }: Props) {
+  const { t } = useTranslation()
   const [order, setOrder] = useState<number[]>([])
   const [isShuffled, setIsShuffled] = useState(false)
   const [idx, setIdx] = useState(0)
@@ -212,7 +214,7 @@ useEffect(() => {
   if (!current) {
     return (
       <div className="text-center p-10">
-  <div className="text-lg text-[var(--color-muted-foreground)]">Chưa có thẻ để học.</div>
+  <div className="text-lg text-[var(--color-muted-foreground)]">{t('study.noCardsToStudy')}</div>
       </div>
     )
   }
@@ -222,7 +224,7 @@ useEffect(() => {
       {/* Header + Progress */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
         <div className="text-sm text-[var(--color-muted-foreground)]">
-          Thẻ {idx + 1}/{total} • Đã nhớ: <span className="font-medium text-[var(--color-success)]">{known.size}</span>
+          {t('study.cardProgress', { current: idx + 1, total })} • {t('study.knownCards')}: <span className="font-medium text-[var(--color-success)]">{known.size}</span>
         </div>
         <div className="h-2 w-full sm:w-40 overflow-hidden rounded-full bg-[var(--color-muted)] border border-[var(--color-border)]">
           <div className="h-full transition-all" style={{ width: `${progress}%`, background: 'var(--color-primary)' }} />
@@ -244,8 +246,8 @@ useEffect(() => {
         <Button
           variant={isShuffled ? "default" : "secondary"}
           onClick={toggleShuffle}
-          title="Xáo trộn"
-          aria-label="Xáo trộn"
+          title={t('study.shuffle')}
+          aria-label={t('study.shuffle')}
           aria-pressed={isShuffled}
           size="sm"
           className="text-xs"
@@ -255,8 +257,8 @@ useEffect(() => {
         <Button
           variant={inverted ? "default" : "secondary"}
           onClick={toggleInvert}
-          title="Đổi chỗ xem: back trước / front sau"
-          aria-label="Đổi chỗ xem"
+          title={t('study.flipView')}
+          aria-label={t('study.flipView')}
           aria-pressed={inverted}
           size="sm"
           className="text-xs"
@@ -266,23 +268,23 @@ useEffect(() => {
         <Button
           variant="secondary"
           onClick={() => setPlaying(p => !p)}
-          title={playing ? "Tạm dừng" : "Phát"}
-          aria-label={playing ? "Tạm dừng" : "Phát"}
+          title={playing ? t('study.pause') : t('study.play')}
+          aria-label={playing ? t('study.pause') : t('study.play')}
           aria-pressed={playing}
           size="sm"
           className="text-xs"
         >
           {playing ? <Pause className="size-3 sm:size-4" /> : <Play className="size-3 sm:size-4" />}
         </Button>
-        <Button variant="secondary" onClick={prev} disabled={idx === 0} title="Trước" aria-label="Trước" size="sm" className="text-xs">
+        <Button variant="secondary" onClick={prev} disabled={idx === 0} title={t('study.previous')} aria-label={t('study.previous')} size="sm" className="text-xs">
           <ChevronLeft className="size-3 sm:size-4" />
         </Button>
         {/* flip button removed: card is flipped by clicking the card or using Space/Enter */}
-        <Button variant="secondary" onClick={next} disabled={idx === total - 1} title="Sau" aria-label="Sau" size="sm" className="text-xs">
+        <Button variant="secondary" onClick={next} disabled={idx === total - 1} title={t('study.next')} aria-label={t('study.next')} size="sm" className="text-xs">
           <ChevronRight className="size-3 sm:size-4" />
         </Button>
-        <Button variant="default" onClick={markKnown} title="Nhớ" aria-label="Nhớ" size="sm" className="text-xs">Nhớ</Button>
-        <Button variant="destructive" onClick={markUnknown} title="Chưa nhớ" aria-label="Chưa nhớ" size="sm" className="text-xs">Chưa nhớ</Button>
+        <Button variant="default" onClick={markKnown} title={t('study.known')} aria-label={t('study.known')} size="sm" className="text-xs">{t('study.known')}</Button>
+        <Button variant="destructive" onClick={markUnknown} title={t('study.unknown')} aria-label={t('study.unknown')} size="sm" className="text-xs">{t('study.unknown')}</Button>
       </div>
     </div>
   )

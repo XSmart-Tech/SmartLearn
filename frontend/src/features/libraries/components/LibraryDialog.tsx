@@ -10,11 +10,11 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/shared/ui/dialog'
-import { useFormSubmission } from '@/shared/hooks/useFormSubmission'
-import { ValidatedInput } from '@/shared/components/ValidatedInput'
+import { useFormSubmission } from '@/shared/hooks'
+import { ValidatedInput } from '@/shared/components'
 import { validateLibraryName } from '@/shared/lib/validation'
-import { DIALOG_TEXTS, STATUS_MESSAGES } from '@/shared/lib/constants'
 import type { Library } from '@/shared/lib/types'
+import { useTranslation } from 'react-i18next'
 
 interface LibraryDialogProps {
   mode: 'create' | 'edit'
@@ -33,6 +33,7 @@ export default function LibraryDialog({
   disabled,
   children,
 }: LibraryDialogProps) {
+  const { t } = useTranslation()
   const [name, setName] = useState(mode === 'edit' ? library?.name || '' : '')
   const [description, setDescription] = useState(mode === 'edit' ? library?.description || '' : '')
 
@@ -48,7 +49,7 @@ export default function LibraryDialog({
 
   const handleSubmit = useCallback(async () => {
     const trimmedName = name.trim()
-    const validation = validateLibraryName(trimmedName)
+    const validation = validateLibraryName(trimmedName, t)
     if (!validation.isValid) {
       throw new Error(validation.error)
     }
@@ -60,17 +61,17 @@ export default function LibraryDialog({
     } else if (mode === 'edit' && library && onUpdate) {
       await onUpdate(library.id, trimmedName, description.trim())
     }
-  }, [name, description, mode, library, onCreate, onUpdate])
+  }, [name, description, mode, library, onCreate, onUpdate, t])
 
   const { submit, isSubmitting } = useFormSubmission(handleSubmit)
 
-  const isValid = validateLibraryName(name.trim()).isValid
+  const isValid = validateLibraryName(name.trim(), t).isValid
 
   return (
     <Dialog>
       <DialogTrigger asChild>
         {mode === 'create' ? (
-          <Button disabled={disabled}>{DIALOG_TEXTS.CREATE} thư viện</Button>
+          <Button disabled={disabled}>{t('common.createLibrary')} {t('common.add')}</Button>
         ) : (
           <div onClick={(e) => e.stopPropagation()}>
             {children}
@@ -80,12 +81,12 @@ export default function LibraryDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {mode === 'create' ? 'Tạo thư viện mới' : 'Chỉnh sửa thư viện'}
+            {mode === 'create' ? t('common.createLibrary') : t('common.editLibrary')}
           </DialogTitle>
           <DialogDescription>
             {mode === 'create'
-              ? 'Nhập tên thư viện và mô tả (tùy chọn).'
-              : 'Cập nhật tên và mô tả thư viện.'
+              ? t('common.enterLibraryDetails')
+              : t('common.updateLibraryDetails')
             }
           </DialogDescription>
         </DialogHeader>
@@ -94,8 +95,8 @@ export default function LibraryDialog({
           <ValidatedInput
             value={name}
             onChange={setName}
-            placeholder="Tên thư viện"
-            label="Tên thư viện"
+            placeholder={t('common.libraryName')}
+            label={t('common.libraryName')}
             validator={validateLibraryName}
             required
             autoFocus
@@ -103,8 +104,8 @@ export default function LibraryDialog({
           <ValidatedInput
             value={description}
             onChange={setDescription}
-            placeholder="Mô tả thư viện (tùy chọn)"
-            label="Mô tả thư viện"
+            placeholder={t('common.libraryDescriptionOptional')}
+            label={t('common.libraryDescription')}
             type="textarea"
             rows={3}
           />
@@ -112,7 +113,7 @@ export default function LibraryDialog({
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline">{DIALOG_TEXTS.CANCEL}</Button>
+            <Button variant="outline">{t('common.cancel')}</Button>
           </DialogClose>
           <DialogClose asChild>
             <Button
@@ -120,8 +121,8 @@ export default function LibraryDialog({
               disabled={disabled || !isValid || isSubmitting}
             >
               {isSubmitting
-                ? (mode === 'create' ? STATUS_MESSAGES.CREATING_LIBRARY : STATUS_MESSAGES.UPDATING_LIBRARY)
-                : (mode === 'create' ? DIALOG_TEXTS.CREATE : DIALOG_TEXTS.UPDATE)
+                ? (mode === 'create' ? t('common.creatingLibrary') : t('common.updatingLibrary'))
+                : (mode === 'create' ? t('common.create') : t('common.edit'))
               }
             </Button>
           </DialogClose>

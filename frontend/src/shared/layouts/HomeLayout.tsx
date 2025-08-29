@@ -1,9 +1,7 @@
 import { Outlet } from 'react-router-dom'
 import { Suspense } from 'react'
-import Header from '@/shared/components/Header'
-import Loader from '@/shared/ui/loader'
-import NavigationLoader from '@/shared/ui/navigation-loader'
-import Footer from '@/shared/components/Footer'
+import { Header, Footer } from '@/shared/components'
+import { Loader, NavigationLoader } from '@/shared/ui'
 import { Container } from '@/shared/ui'
 
 export default function HomeLayout() {

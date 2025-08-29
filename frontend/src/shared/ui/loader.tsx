@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 export type LoaderProps = {
   size?: number;
@@ -10,24 +11,25 @@ export type LoaderProps = {
 
 const Loader: React.FC<LoaderProps> = ({
   size = 120,
-  color = "black",
+  color = "hsl(var(--foreground))",
   className = "",
-  label = "Đang tải",
+  label,
   fullScreen = false,
 }) => {
-  // when fullscreen, add a semi-transparent dark background
+  const { t } = useTranslation();
+  const defaultLabel = label ?? t('common.loading');
   const rootClass = fullScreen
-    ? `fixed inset-0 z-50 flex items-center justify-center bg-black/60 ${className}`
+    ? `fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-white/10 ${className}`
     : `flex items-center justify-center w-full h-full ${className}`;
 
-  // ensure loader contrasts on dark overlay by defaulting to white in fullscreen
-  const displayColor = fullScreen && color === "black" ? "white" : color;
+  // ensure loader contrasts on dark overlay by defaulting to background color in fullscreen
+  const displayColor = fullScreen && color === "hsl(var(--foreground))" ? "hsl(var(--background))" : color;
 
   return (
     <div
       className={rootClass}
       role="status"
-      aria-label={label}
+      aria-label={defaultLabel}
       style={{ color: displayColor }}
     >
       <div style={{ width: size, height: size }} className="relative">

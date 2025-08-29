@@ -5,9 +5,9 @@ import { removeLibrary, createLibrary } from '@/shared/store/librariesSlice'
 import type { Library } from '@/shared/lib/types'
 import { Container, ConfirmationDialog } from '@/shared/ui'
 import LibraryDialog from '@/features/libraries/components/LibraryDialog'
-import PageHeader from '@/shared/components/PageHeader'
+import { PageHeader } from '@/shared/components'
 
-const LibraryList = lazy(() => import('@/features/libraries/components/LibraryList'))
+const LibraryCardList = lazy(() => import('@/features/libraries/components/LibraryCardList'))
 const selectUid = (s: RootState) => s.auth.user?.uid ?? null
 
 export default function LibrariesPage() {
@@ -41,7 +41,7 @@ export default function LibrariesPage() {
         actions={<LibraryDialog mode="create" onCreate={handleCreate} disabled={!uid} />}
       />
 
-      <LibraryList onAskRemove={onAskRemove} />
+      <LibraryCardList onAskRemove={onAskRemove} />
 
       {/* ONE global ConfirmationDialog duy nhất */}
       <ConfirmationDialog

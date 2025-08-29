@@ -1,5 +1,6 @@
 import AppRouter from './router'
 import { useAuth } from '@/features/auth/hooks/useAuth'
+import { ErrorBoundary } from '@/shared/components'
 
 export default function App() {
 	// start the auth listener as soon as the app mounts so Redux has the
@@ -7,5 +8,9 @@ export default function App() {
 	// flash/redirect to home when the page is reloaded while logged in.
 	useAuth()
 
-	return <AppRouter />
+	return (
+		<ErrorBoundary>
+			<AppRouter />
+		</ErrorBoundary>
+	)
 }

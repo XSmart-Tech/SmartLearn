@@ -7,30 +7,24 @@ import { createNotification } from '@/shared/store/notificationsSlice'
 import { toast } from 'sonner'
 import { fetchLibraryById, updateLibrary } from '@/shared/store/librariesSlice'
 const ShareManager = lazy(() => import('@/features/libraries/components/ShareManager'))
-const ImportExport = lazy(() => import('@/shared/components/ImportExport'))
+const ImportExport = lazy(() => import('@/shared/components').then(m => ({ default: m.ImportExport })))
 const BulkAddCardsDialog = lazy(() => import('@/features/libraries/components/BulkAddCardsDialog'))
 import LibraryDialog from '@/features/libraries/components/LibraryDialog'
-import { useSearch } from '@/shared/hooks/useSearch'
-import { sortCards } from '@/shared/lib/cardUtils'
-import { useRealtimeCards } from '@/shared/hooks/useRealtime'
-import EmptyState from '@/shared/components/EmptyState'
+import { useRealtimeCards } from '@/shared/hooks'
+import { CardListView, PageHeader } from '@/shared/components'
+import type { SortOption, GridColumns } from '@/shared/components'
 import {
   Button, Input, Dialog, DialogContent, DialogDescription, DialogTitle,
   DialogHeader, DialogFooter, DialogClose,
-  SkeletonLine,
-  Skeleton, Textarea, Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-  Large,
+  Textarea,
   Small,
-  P,
   Container,
   ConfirmationDialog,
 } from '@/shared/ui'
 import { useParams, useNavigate } from 'react-router-dom'
 import FlipDeck from '@/features/study/components/FlipDeck'
-import { Share2, Plus, X, Search, RefreshCw, ArrowUpDown, Grid3X3, List, BookOpen, CheckCircle, Edit } from 'lucide-react'
-import { cn } from '@/shared/lib/utils'
+import { Share2, Plus, BookOpen, CheckCircle, Edit } from 'lucide-react'
 import { addRecentLibrary } from '@/shared/lib/recent'
-import PageHeader from '@/shared/components/PageHeader'
 
 export default function LibraryDetailPage() {
   const EMPTY_CARDS: Flashcard[] = []
@@ -40,7 +34,6 @@ export default function LibraryDetailPage() {
   const lib = useSelector((s: RootState) => (id ? s.libraries.items[id] : undefined))
   const cards = useSelector((s: RootState) => (id ? (s.cards.byLib[id] ?? EMPTY_CARDS) : EMPTY_CARDS))
   const cardsStatus = useSelector((s: RootState) => (id ? (s.cards.byLibStatus[id] ?? 'idle') : 'idle'))
-  const cardsError = useSelector((s: RootState) => (id ? (s.cards.byLibError[id] ?? null) : null))
   const user = useSelector((s: RootState) => s.auth.user)
 
   const isOwner = Boolean(lib && user && lib.ownerId === user.uid)
@@ -61,9 +54,6 @@ export default function LibraryDetailPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
-  const [sortBy, setSortBy] = useState<'front' | 'back' | 'createdAt' | 'updatedAt'>('createdAt')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
 
   // Load thẻ cho thư viện hiện tại
   useEffect(() => {
@@ -135,17 +125,70 @@ export default function LibraryDetailPage() {
   const onRequestDelete = (cardId: string) => { setDeleteId(cardId); setConfirmOpen(true) }
   const confirmDelete = () => { if (deleteId) dispatch(removeCard(deleteId)); setDeleteId(null); setConfirmOpen(false) }
 
-  const { query, setQuery, filtered: searchFiltered, hasFilter } = useSearch(cards, {
-    searchFields: ['front', 'back', 'description']
-  })
-
-  const filtered = useMemo(() => {
-    return sortCards(searchFiltered, sortBy, sortOrder)
-  }, [searchFiltered, sortBy, sortOrder])
-
   const hasCards = cards.length > 0
 
   if (!id) return null
+
+  const sortOptions: SortOption[] = [
+    { value: 'createdAt', label: 'Ngày tạo' },
+    { value: 'updatedAt', label: 'Ngày sửa' },
+    { value: 'front', label: 'Mặt trước' },
+    { value: 'back', label: 'Mặt sau' }
+  ]
+
+  const gridColumns: GridColumns = { default: 1, md: 2, lg: 3, xl: 4 }
+
+  const renderCardItem = (card: Flashcard, viewMode: 'list' | 'grid' = 'grid') => {
+    return (
+      <li className={`rounded-xl border p-3 shadow-sm bg-card text-card-foreground border-border transition-all hover:shadow-md ${
+        viewMode === 'grid' ? "flex-1 min-w-0" : ""
+      }`}>
+        <div className={`flex justify-between items-start gap-2 ${
+          viewMode === 'grid' ? "flex-col" : ""
+        }`}>
+          <div className="flex-1 min-w-0">
+            <div className="break-words font-semibold">{card.front}</div>
+            <div className="mt-2 text-sm text-muted-foreground break-words">{card.back}</div>
+            {card.description && <div className="mt-2 text-muted-foreground">Mô tả: {card.description}</div>}
+          </div>
+          {isOwner && (
+            <div className={`flex gap-2 shrink-0 ${
+              viewMode === 'grid' ? "mt-3 self-end" : "flex-col ml-3"
+            }`}>
+              <Button variant="secondary" size="sm" onClick={() => openEdit(card)}>Sửa</Button>
+              <Button variant="destructive" size="sm" onClick={() => onRequestDelete(card.id)}>Xóa</Button>
+            </div>
+          )}
+        </div>
+      </li>
+    )
+  }
+
+  const renderLoading = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 list-none">
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div key={i} className="rounded-xl border p-3 shadow-sm bg-card border-border">
+          <div className="flex justify-between items-start gap-2 flex-col">
+            <div className="flex-1">
+              <div className="h-5 w-2/3 bg-gray-200 rounded animate-pulse" />
+              <div className="mt-2 w-5/6 bg-gray-200 rounded animate-pulse" />
+              <div className="mt-1 w-3/5 bg-gray-200 rounded animate-pulse" />
+            </div>
+            <div className="flex gap-2 mt-3 self-end">
+              <div className="h-8 w-16 bg-gray-200 rounded animate-pulse" />
+              <div className="h-8 w-16 bg-gray-200 rounded animate-pulse" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+
+  const renderEmpty = () => (
+    <div className="text-center py-8 text-muted-foreground">
+      <div>Không có thẻ nào trong thư viện này.</div>
+    </div>
+  )
 
   const headerActions = (
     <>
@@ -183,7 +226,7 @@ export default function LibraryDetailPage() {
             <Plus className="mr-2 h-4 w-4" /> Thêm thẻ
           </Button>
           <Suspense fallback={<Button variant="outline" disabled>Thêm nhiều thẻ</Button>}>
-            <BulkAddCardsDialog libraryId={id} />
+            <BulkAddCardsDialog libraryId={id!} />
           </Suspense>
         </>
       )}
@@ -194,7 +237,7 @@ export default function LibraryDetailPage() {
           <Suspense fallback={<Button variant="outline" disabled>Import/Export</Button>}>
             <ImportExport
               cards={cards}
-              onImport={(list) => {
+              onImport={(list: Flashcard[]) => {
                 if (!id || !lib || !user) return
                 
                 if (isOwner) {
@@ -207,7 +250,7 @@ export default function LibraryDetailPage() {
                   }
                 } else if (userRole === 'contributor') {
                   // Contributor gửi request
-                  const cardPayloads: Omit<Flashcard, 'id' | 'createdAt' | 'updatedAt'>[] = list.map(c => ({
+                  const cardPayloads: Omit<Flashcard, 'id' | 'createdAt' | 'updatedAt'>[] = list.map((c: Flashcard) => ({
                     front: c.front, back: c.back, description: c.description, libraryId: id
                   }))
                   
@@ -274,187 +317,9 @@ export default function LibraryDetailPage() {
 
 
 
-  const SearchBox = () => (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-2">
-      <div className="relative w-full sm:max-w-md">
-        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input
-          aria-label="Tìm kiếm thẻ"
-          className="pl-9 pr-9"
-          placeholder="Tìm kiếm thẻ (mặt trước/sau, description)"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-        {query && (
-          <button
-            type="button"
-            aria-label="Xóa từ khóa"
-            className="absolute right-2 top-2 rounded-md p-1 text-muted-foreground hover:bg-accent"
-            onClick={() => setQuery('')}
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
-      </div>
 
-      <div className="flex items-center gap-2 flex-wrap">
-        <Select value={sortBy} onValueChange={(value) => setSortBy(value as 'front' | 'back' | 'createdAt' | 'updatedAt')}>
-          <SelectTrigger className="w-32">
-            <SelectValue placeholder="Sắp xếp theo" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="createdAt">Ngày tạo</SelectItem>
-            <SelectItem value="updatedAt">Ngày sửa</SelectItem>
-            <SelectItem value="front">Mặt trước</SelectItem>
-            <SelectItem value="back">Mặt sau</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-        >
-          <ArrowUpDown className="h-4 w-4" />
-        </Button>
-
-        <div className="flex border rounded-md">
-          <Button
-            variant={viewMode === 'list' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setViewMode('list')}
-            className="rounded-r-none"
-          >
-            <List className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={viewMode === 'grid' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setViewMode('grid')}
-            className="rounded-l-none"
-          >
-            <Grid3X3 className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {hasFilter && (
-          <Small className="text-muted-foreground whitespace-nowrap">
-            {filtered.length}/{cards.length} kết quả
-          </Small>
-        )}
-      </div>
-    </div>
-  )
-
-  const CardItem = ({ c }: { c: Flashcard }) => (
-    <li className={cn(
-      "rounded-xl border p-3 shadow-sm bg-card text-card-foreground border-border transition-all hover:shadow-md",
-      viewMode === 'grid' ? "flex-1 min-w-0" : ""
-    )}>
-      <div className={cn(
-        "flex justify-between items-start gap-2",
-        viewMode === 'grid' ? "flex-col" : ""
-      )}>
-        <div className="flex-1 min-w-0">
-          <Large className="break-words font-semibold">{c.front}</Large>
-          <P className="mt-2 text-sm text-muted-foreground break-words">{c.back}</P>
-          {c.description && <Small className="mt-2 text-muted-foreground">Mô tả: {c.description}</Small>}
-        </div>
-        {isOwner && (
-          <div className={cn(
-            "flex gap-2 shrink-0",
-            viewMode === 'grid' ? "mt-3 self-end" : "flex-col ml-3"
-          )}>
-            <Button variant="secondary" size="sm" onClick={() => openEdit(c)}>Sửa</Button>
-            <Button variant="destructive" size="sm" onClick={() => onRequestDelete(c.id)}>Xóa</Button>
-          </div>
-        )}
-      </div>
-    </li>
-  )
-
-  const CardItemSkeleton = () => (
-    <li className={cn(
-      "rounded-xl border p-3 shadow-sm bg-card border-border",
-      viewMode === 'grid' ? "flex-1 min-w-0" : ""
-    )}>
-      <div className={cn(
-        "flex justify-between items-start gap-2",
-        viewMode === 'grid' ? "flex-col" : ""
-      )}>
-        <div className="flex-1">
-          <SkeletonLine className="h-5 w-2/3" />
-          <SkeletonLine className="mt-2 w-5/6" />
-          <SkeletonLine className="mt-1 w-3/5" />
-          <SkeletonLine className="mt-3 h-3 w-1/3" />
-        </div>
-        <div className={cn(
-          "flex gap-2",
-          viewMode === 'grid' ? "mt-3 self-end" : "flex-col ml-3"
-        )}>
-          <Skeleton className="h-8 w-16" />
-          <Skeleton className="h-8 w-16" />
-        </div>
-      </div>
-    </li>
-  )
-
-  const renderLoading = () => (
-    <>
-      <div className="mt-6 space-y-6">
-        <Skeleton className="h-40 w-full rounded-xl" /> {/* FlipDeck placeholder */}
-        <div className="flex items-center gap-2">
-          <Skeleton className="h-9 w-full sm:w-96" />
-          <Skeleton className="h-4 w-24" />
-        </div>
-        <ul className="flex flex-col gap-3">
-          <CardItemSkeleton />
-          <CardItemSkeleton />
-          <CardItemSkeleton />
-        </ul>
-      </div>
-    </>
-  )
-
-  const renderError = () => (
-    <div className="rounded-xl border p-4 bg-red-50">
-      <P className="text-red-600">{cardsError ?? 'Lỗi tải thẻ.'}</P>
-      <Button size="sm" className="mt-2" onClick={() => dispatch(fetchCards(id))}>
-        <RefreshCw className="mr-2 h-4 w-4" /> Thử lại
-      </Button>
-    </div>
-  )
-
-  const renderEmptyNoCards = () => (
-    <EmptyState
-      icon={<Plus className="h-8 w-8 text-gray-400" />}
-      title="Chưa có thẻ nào trong thư viện này."
-      description={isOwner 
-        ? "Bắt đầu tạo bộ thẻ ghi nhớ đầu tiên của bạn!" 
-        : userRole === 'contributor'
-        ? "Bạn có thể gửi yêu cầu thêm thẻ đến chủ thư viện."
-        : "Chỉ chủ thư viện mới có thể thêm thẻ."
-      }
-      action={isOwner ? <Button className="mt-3 bg-primary hover:bg-primary/90" onClick={openAdd}><Plus className="mr-2 h-4 w-4" /> Tạo thẻ đầu tiên</Button> : null}
-    />
-  )
-
-  const renderEmptyNoResult = () => (
-    <EmptyState
-      icon={<Search className="h-8 w-8 text-gray-400" />}
-      title="Không có thẻ khớp với từ khóa tìm kiếm."
-      description="Hãy thử từ khóa khác hoặc xóa bộ lọc."
-    />
-  )
 
   const renderCardsSection = () => {
-    if (cardsStatus === 'idle' || cardsStatus === 'loading') {
-      return renderLoading()
-    }
-    if (cardsStatus === 'error') {
-      return renderError()
-    }
-
     // ready
     return (
       <>
@@ -464,26 +329,28 @@ export default function LibraryDetailPage() {
           {/* ✅ FlipDeck luôn nhận full cards */}
           {hasCards ? <FlipDeck cards={cards} /> : null}
 
-          <SearchBox />
-
           {!isOwner && <Small className="text-muted-foreground">
-            {userRole === 'contributor' 
-              ? 'Bạn có thể thêm thẻ bằng cách gửi yêu cầu đến chủ thư viện.' 
+            {userRole === 'contributor'
+              ? 'Bạn có thể thêm thẻ bằng cách gửi yêu cầu đến chủ thư viện.'
               : 'Bạn không có quyền chỉnh sửa thư viện này.'
             }
           </Small>}
 
-          {!hasCards ? (
-            renderEmptyNoCards()
-          ) : filtered.length === 0 ? (
-            renderEmptyNoResult()
-          ) : (
-            <div className={cn(
-              viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 list-none" : "flex flex-col gap-3 list-none"
-            )}>
-              {filtered.map((c) => <CardItem key={c.id} c={c} />)}
-            </div>
-          )}
+          <CardListView
+            data={cards}
+            searchFields={['front', 'back', 'description']}
+            sortOptions={sortOptions}
+            defaultSortBy="createdAt"
+            defaultSortOrder="desc"
+            viewMode="grid"
+            gridColumns={gridColumns}
+            renderItem={renderCardItem}
+            renderEmpty={renderEmpty}
+            renderLoading={renderLoading}
+            searchPlaceholder="Tìm kiếm thẻ..."
+            showResultCount={true}
+            isLoading={cardsStatus === 'loading'}
+          />
         </div>
       </>
     )

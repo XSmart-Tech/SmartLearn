@@ -12,10 +12,8 @@ import { Button } from '@/shared/ui'
 import { setShareRole, setUnshareRole } from '@/shared/store/librariesSlice'
 import {
   Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle} from '@/shared/ui/dialog'
-import { UserRow } from '@/shared/components/UserRow'
-import { AddUserForm } from '@/shared/components/AddUserForm'
+import { UserRow, AddUserForm, MemberCount } from '@/shared/components'
 import { EmptyShareState } from './EmptyShareState'
-import { MemberCount } from '@/shared/components/MemberCount'
 
 export default function ShareManager({
   libraryId,

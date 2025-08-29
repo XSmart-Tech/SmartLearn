@@ -5,7 +5,8 @@ import { fetchCards } from '@/shared/store/cardsSlice'
 import { fetchLibraryById } from '@/shared/store/librariesSlice'
 import type { CardsSliceState, Status } from '@/shared/store/cardsSlice'
 import { getRecentLibraryIds, addRecentLibrary } from '@/shared/lib/recent'
-import { useSearch } from '@/shared/hooks/useSearch'
+import { useSearch } from '@/shared/hooks'
+import { useTranslation } from 'react-i18next'
 const QuizAnswers = lazy(() => import('@/features/study/components/QuizAnswers'))
 import {
   Button,
@@ -38,6 +39,7 @@ type ViewTab = 'study' | 'quiz'
 export default function StudyPageMerged() {
   const dispatch = useDispatch<AppDispatch>()
   const { user } = useSelector((s: RootState) => s.auth)
+  const { t } = useTranslation()
 
   const order = useSelector((s: RootState) => s.libraries.order)
   // libs list intentionally not shown in UI (library selection moved out of study/quiz pages)
@@ -258,8 +260,8 @@ export default function StudyPageMerged() {
   }, [tab, started, card, cardMode, choices, mcqResult, fillResult, input, goNext])
 
   // ===== Guards =====
-  if (!user) return <Container><P>Hãy đăng nhập để học.</P></Container>
-  if (order.length === 0) return <Container><P>Chưa có thư viện nào. Hãy tạo thư viện và thêm thẻ.</P></Container>
+  if (!user) return <Container><P>{t('common.loginRequired')}</P></Container>
+  if (order.length === 0) return <Container><P>{t('common.noLibraries')}</P></Container>
 
   return (
     <Container className="space-y-4">
@@ -267,7 +269,7 @@ export default function StudyPageMerged() {
       <div className="flex justify-end">
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="ghost">Tùy chọn</Button>
+            <Button variant="ghost">{t('common.options')}</Button>
           </PopoverTrigger>
           <PopoverContent>
             <div className="space-y-3">
@@ -278,13 +280,13 @@ export default function StudyPageMerged() {
                 <Input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Tìm theo nội dung, gợi ý"
+                  placeholder={t('study.searchPlaceholder')}
                   className="pl-8 w-[18rem]"
                 />
               </div>
 
               <div className="flex items-center gap-2">
-                <Small>Chế độ</Small>
+                <Small>{t('study.mode')}</Small>
                 <ToggleGroup type="single" value={mode} onValueChange={(v) => v && setMode(v as Mode)} className="ml-2">
                   <ToggleGroupItem value="mcq">MCQ</ToggleGroupItem>
                   <ToggleGroupItem value="fill">Fill</ToggleGroupItem>
@@ -293,23 +295,23 @@ export default function StudyPageMerged() {
               </div>
 
               <div className="flex items-center gap-2">
-                <Small>Số câu</Small>
+                <Small>{t('study.questionCount')}</Small>
                 <Input
                   type="number"
                   value={count}
                   onChange={(e) => setCount(Math.max(1, Number(e.target.value) || 1))}
                   className="w-28"
                 />
-                <Small className="text-muted-foreground">Có {cards.length} thẻ</Small>
+                <Small className="text-muted-foreground">{t('study.cardsAvailable', { count: cards.length })}</Small>
               </div>
 
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
-                  <Small>Xáo trộn</Small>
+                  <Small>{t('study.shuffle')}</Small>
                   <Switch checked={shuffleOn} onCheckedChange={() => { setShuffleOn(s => !s); setShuffleSeed(x => x + 1) }} />
                 </div>
-                <Button variant="outline" onClick={() => libId && dispatch(fetchCards(libId))}><RefreshCw className="mr-2 h-4 w-4" />Tải lại</Button>
-                <Button onClick={startQuiz} disabled={cards.length === 0}>Bắt đầu</Button>
+                <Button variant="outline" onClick={() => libId && dispatch(fetchCards(libId))}><RefreshCw className="mr-2 h-4 w-4" />{t('study.reload')}</Button>
+                <Button onClick={startQuiz} disabled={cards.length === 0}>{t('study.start')}</Button>
               </div>
             </div>
           </PopoverContent>
@@ -320,15 +322,15 @@ export default function StudyPageMerged() {
       {cardsStatus === 'loading' && (
         <div className="rounded-2xl border p-6 text-center text-muted-foreground bg-card">
           <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin" />
-          Đang tải thẻ…
+          {t('study.loadingCards')}
         </div>
       )}
 
       {cardsStatus === 'error' && (
         <div className="rounded-2xl border p-6 text-center bg-card">
-          <P className="text-destructive-foreground">{cardsError ?? 'Không tải được thẻ.'}</P>
+          <P className="text-destructive-foreground">{cardsError ?? t('study.failedToLoadCards')}</P>
           <div className="mt-3">
-            <Button onClick={() => libId && dispatch(fetchCards(libId))}>Thử lại</Button>
+            <Button onClick={() => libId && dispatch(fetchCards(libId))}>{t('study.tryAgain')}</Button>
           </div>
         </div>
       )}
@@ -338,7 +340,7 @@ export default function StudyPageMerged() {
         filtered.length > 0 ? (
           <div className="rounded-2xl border p-4 bg-card">
             <div className="mb-3 flex items-center justify-between">
-              <Small className="text-muted-foreground">{filtered.length} thẻ</Small>
+              <Small className="text-muted-foreground">{t('study.cardsCount', { count: filtered.length })}</Small>
             </div>
             <Suspense fallback={<Loader2 className="animate-spin" />}>
               <FlipDeck cards={filtered} />
@@ -346,7 +348,7 @@ export default function StudyPageMerged() {
           </div>
         ) : (
           <div className="rounded-2xl border p-10 text-center bg-card">
-            <P>Không còn thẻ phù hợp. Thử xoá bộ lọc hoặc thêm thẻ mới.</P>
+            <P>{t('study.noMatchingCards')}</P>
           </div>
         )
       )}
@@ -357,7 +359,7 @@ export default function StudyPageMerged() {
           {started && (
             <div className="rounded-xl border p-3">
               <div className="flex items-center gap-3 text-sm">
-                <span className="font-medium">Tiến độ</span>
+                <span className="font-medium">{t('study.progress')}</span>
                 <div className="relative h-2 flex-1 rounded-full bg-muted/20 overflow-hidden">
                   <div
                     className="absolute inset-y-0 left-0 bg-primary transition-all"
@@ -366,14 +368,14 @@ export default function StudyPageMerged() {
                   />
                 </div>
                 <span className="tabular-nums">{i + 1}/{quizCards.length}</span>
-                <span className="ml-3 text-muted-foreground">Đúng: {correctCount}</span>
+                <span className="ml-3 text-muted-foreground">{t('study.correct')}: {correctCount}</span>
               </div>
             </div>
           )}
 
           <div className="rounded-2xl border p-6 text-center min-h-[260px] flex flex-col justify-center bg-card">
             {!card ? (
-              <P>Thư viện này chưa có thẻ. Thêm thẻ để bắt đầu quiz.</P>
+              <P>{t('study.libraryHasNoCards')}</P>
             ) : (
               <>
                 <Large className="leading-relaxed">{card.front}</Large>
@@ -408,7 +410,7 @@ export default function StudyPageMerged() {
                     })}
                     {mcqResult !== null && (
                       <Small className={mcqResult ? 'text-success-foreground' : 'text-destructive-foreground'}>
-                        {mcqResult ? 'Chính xác 🎉' : `Sai — đáp án đúng: ${card.back}`}
+                        {mcqResult ? t('study.correctAnswer') : t('study.wrongAnswer', { answer: card.back })}
                       </Small>
                     )}
                   </div>
@@ -418,8 +420,8 @@ export default function StudyPageMerged() {
                       value={input}
                       onChange={(e) => setInput((e.target as HTMLInputElement).value)}
                       className="w-full rounded-xl border px-3 py-2 focus:outline-none focus:ring-4 focus:ring-primary/20"
-                      placeholder="Nhập đáp án"
-                      aria-label="Nhập đáp án"
+                      placeholder={t('study.answerPlaceholder')}
+                      aria-label={t('study.answerAriaLabel')}
                     />
                     <div className="flex gap-2 justify-center">
                       <Button
@@ -432,12 +434,12 @@ export default function StudyPageMerged() {
                           setShow(true)
                         }}
                       >
-                        Kiểm tra (Enter)
+                        {t('study.checkAnswer')} (Enter)
                       </Button>
                     </div>
                     {fillResult !== null && (
                       <Small className={fillResult ? 'text-success-foreground' : 'text-destructive-foreground'}>
-                        {fillResult ? 'Chính xác 🎉' : 'Sai'}
+                        {fillResult ? t('study.correct') : t('study.incorrect')}
                       </Small>
                     )}
                     {(show) && (
@@ -462,31 +464,31 @@ export default function StudyPageMerged() {
                   goNext()
                 }}
               >
-                Tiếp {cardMode === 'fill' ? '(Shift+Enter)' : '(Enter)'}
+                {t('study.next')} {cardMode === 'fill' ? '(Shift+Enter)' : '(Enter)'}
               </Button>
               {cardMode === 'fill' && (
                 <Button variant="secondary" onClick={() => setShow(s => !s)}>
-                  {show ? 'Ẩn gợi ý' : 'Gợi ý'}
+                  {show ? t('study.hideHint') : t('study.showHint')}
                 </Button>
               )}
             </div>
           ) : finished ? (
             <div className="rounded-2xl border p-6 space-y-4 bg-card">
               <div className="text-center space-y-1">
-                <div className="text-2xl font-bold">Hoàn thành 🎉</div>
+                <div className="text-2xl font-bold">{t('study.quizCompleted')}</div>
                 <FinalScore correctCount={correctCount} total={quizCards.length} />
               </div>
 
               <div className="text-left">
-                <div className="text-sm text-muted-foreground mb-2">Đáp án các câu:</div>
+                <div className="text-sm text-muted-foreground mb-2">{t('study.answers')}:</div>
                 <Suspense fallback={<Loader2 className="animate-spin" />}>
                   <QuizAnswers cards={quizCards} />
                 </Suspense>
               </div>
 
               <div className="flex gap-2 justify-center">
-                <Button onClick={retakeQuiz}>Làm lại</Button>
-                <Button variant="secondary" onClick={() => { setFinished(false); setQuizCards([]); setI(0); setCorrectCount(0) }}>Quay lại</Button>
+                <Button onClick={retakeQuiz}>{t('study.retakeQuiz')}</Button>
+                <Button variant="secondary" onClick={() => { setFinished(false); setQuizCards([]); setI(0); setCorrectCount(0) }}>{t('study.backToStudy')}</Button>
               </div>
             </div>
           ) : null}
@@ -497,6 +499,7 @@ export default function StudyPageMerged() {
 }
 
 function FinalScore({ correctCount, total }: { correctCount: number; total: number }) {
+  const { t } = useTranslation()
   const score10 = (() => {
     const t = total || 1
     const raw = (correctCount / t) * 10
@@ -505,11 +508,11 @@ function FinalScore({ correctCount, total }: { correctCount: number; total: numb
   })()
   return (
     <>
-      <div className="text-lg">Điểm của bạn: {score10}</div>
+      <div className="text-lg">{t('study.yourScore')}: {score10}</div>
   <div className="flex items-center gap-3 justify-center text-sm text-muted-foreground">
-        <span>Tổng: {total}</span>
-        <span>Đúng: {correctCount}</span>
-        <span>Sai: {Math.max(0, total - correctCount)}</span>
+        <span>{t('study.total')}: {total}</span>
+        <span>{t('study.correct')}: {correctCount}</span>
+        <span>{t('study.incorrect')}: {Math.max(0, total - correctCount)}</span>
       </div>
       <div className="mt-2 h-2 rounded-full bg-muted/20 overflow-hidden">
         <div className="h-full bg-success transition-all" style={{ width: `${Math.round((correctCount / Math.max(1, total)) * 100)}%` }} />

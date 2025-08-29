@@ -1,24 +1,24 @@
 export const DIALOG_TEXTS = {
-  CANCEL: 'Hủy',
-  SAVE: 'Lưu',
-  CREATE: 'Tạo',
-  UPDATE: 'Cập nhật',
-  LOADING: 'Đang xử lý...',
-  ADD: 'Thêm',
-  REMOVE: 'Gỡ',
-  SEARCH_USERS: 'Tìm kiếm người dùng...',
-  SELECT_USER: 'Chọn người dùng:'
+  CANCEL: 'common.cancel',
+  SAVE: 'common.save',
+  CREATE: 'common.create',
+  UPDATE: 'common.edit',
+  LOADING: 'common.processing',
+  ADD: 'common.add',
+  REMOVE: 'common.remove',
+  SEARCH_USERS: 'common.searchUsers',
+  SELECT_USER: 'common.userSearchResults'
 } as const
 
 export const VALIDATION_MESSAGES = {
-  LIBRARY_NAME_REQUIRED: 'Tên thư viện không được để trống',
-  LIBRARY_NAME_TOO_LONG: 'Tên thư viện không được quá 100 ký tự',
-  USER_SELECTION_REQUIRED: 'Vui lòng chọn người dùng'
+  LIBRARY_NAME_REQUIRED: 'common.libraryRequired',
+  LIBRARY_NAME_TOO_LONG: 'common.libraryNameTooLong',
+  USER_SELECTION_REQUIRED: 'common.userSelectionRequired'
 } as const
 
 export const STATUS_MESSAGES = {
-  ADDING_USER: 'Đang thêm người dùng...',
-  REMOVING_USER: 'Đang gỡ người dùng...',
-  CREATING_LIBRARY: 'Đang tạo thư viện...',
-  UPDATING_LIBRARY: 'Đang cập nhật thư viện...'
+  ADDING_USER: 'common.addingUser',
+  REMOVING_USER: 'common.removingUser',
+  CREATING_LIBRARY: 'common.creatingLibrary',
+  UPDATING_LIBRARY: 'common.updatingLibrary'
 } as const

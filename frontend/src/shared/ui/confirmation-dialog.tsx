@@ -17,6 +17,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/shared/ui'
+import { useTranslation } from 'react-i18next'
 
 interface ConfirmationDialogProps {
   open: boolean
@@ -35,12 +36,16 @@ export default function ConfirmationDialog({
   onOpenChange,
   title,
   description,
-  confirmText = 'Xóa',
-  cancelText = 'Hủy',
+  confirmText,
+  cancelText,
   onConfirm,
   variant = 'alert',
   destructive = true,
 }: ConfirmationDialogProps) {
+  const { t } = useTranslation()
+
+  const defaultConfirmText = confirmText ?? t('common.delete')
+  const defaultCancelText = cancelText ?? t('common.cancel')
   if (variant === 'alert') {
     return (
       <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -51,11 +56,11 @@ export default function ConfirmationDialog({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel asChild>
-              <Button variant="outline">{cancelText}</Button>
+              <Button variant="outline">{defaultCancelText}</Button>
             </AlertDialogCancel>
             <AlertDialogAction asChild>
               <Button variant={destructive ? "destructive" : "default"} onClick={onConfirm}>
-                {confirmText}
+                {defaultConfirmText}
               </Button>
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -72,8 +77,8 @@ export default function ConfirmationDialog({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="secondary" onClick={() => onOpenChange(false)}>{cancelText}</Button>
-          <Button variant={destructive ? "destructive" : "default"} onClick={onConfirm}>{confirmText}</Button>
+          <Button variant="secondary" onClick={() => onOpenChange(false)}>{defaultCancelText}</Button>
+          <Button variant={destructive ? "destructive" : "default"} onClick={onConfirm}>{defaultConfirmText}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

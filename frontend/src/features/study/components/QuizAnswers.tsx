@@ -1,5 +1,6 @@
 import type { Flashcard } from '@/shared/lib/types'
 import { cn } from '@/shared/lib/utils'
+import { useTranslation } from 'react-i18next'
 
 interface QuizAnswersProps {
   cards: Flashcard[]
@@ -7,8 +8,10 @@ interface QuizAnswersProps {
 }
 
 export default function QuizAnswers({ cards, className }: QuizAnswersProps) {
+  const { t } = useTranslation()
+
   if (cards.length === 0) {
-    return <div className="text-sm text-muted-foreground">Không có câu hỏi.</div>
+    return <div className="text-sm text-muted-foreground">{t('study.noQuestions')}</div>
   }
 
   return (
@@ -16,8 +19,8 @@ export default function QuizAnswers({ cards, className }: QuizAnswersProps) {
       {cards.map((c, idx) => (
         <div key={c.id} className="rounded-lg border p-3 bg-card">
           <div className="font-medium text-card-foreground">{idx + 1}. {c.front}</div>
-          <div className="text-card-foreground mt-1">Đáp án: <span className="font-semibold">{c.back}</span></div>
-          {c.description && <div className="text-sm text-muted-foreground mt-1">Mô tả: {c.description}</div>}
+          <div className="text-card-foreground mt-1">{t('study.answer')}: <span className="font-semibold">{c.back}</span></div>
+          {c.description && <div className="text-sm text-muted-foreground mt-1">{t('common.description')}: {c.description}</div>}
         </div>
       ))}
     </div>

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { AppSidebar } from "@/shared/components/app-sidebar";
+import { AppSidebar } from "@/shared/components";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -18,8 +18,11 @@ import { Outlet } from "react-router-dom";
 import { Suspense } from "react";
 import Loader from "@/shared/ui/loader";
 import NavigationLoader from '@/shared/ui/navigation-loader'
+import { useTranslation } from 'react-i18next'
 
 export default function DashboardLayout() {
+  const { t } = useTranslation()
+
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -37,9 +40,16 @@ export default function DashboardLayout() {
                     .filter((m): m is (typeof m & { handle: unknown }) => !!(m.handle as any) && !!((m.handle as any).crumb))
                     .map((m, idx, arr) => {
                       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      const handle = m.handle as unknown as { crumb: string | ((match: any) => string) }
-                      const crumb = typeof handle.crumb === 'function' ? handle.crumb(m) : handle.crumb
+                      const handle = m.handle as unknown as { crumb: string | ((match: any) => React.ReactNode) | React.ReactElement }
+                      let crumb = typeof handle.crumb === 'function' ? handle.crumb(m) : handle.crumb
                       const isLast = idx === arr.length - 1
+
+                      // If crumb is a React element (like BreadcrumbLabel), render it as is
+                      // If crumb is a string, translate it
+                      if (typeof crumb === 'string') {
+                        const translation = t(`navigation.${crumb}`)
+                        crumb = translation === `navigation.${crumb}` ? crumb : translation
+                      }
 
                       // If last, render page text. Otherwise render link.
                       return (

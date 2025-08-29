@@ -6,10 +6,12 @@ import { fetchCards } from '@/shared/store/cardsSlice'
 import { Button, P, Small, Large, Popover, PopoverTrigger, PopoverContent, Container } from '@/shared/ui'
 import { getRecentLibraryIds, addRecentLibrary } from '@/shared/lib/recent'
 import QuizAnswers from '@/features/study/components/QuizAnswers'
+import { useTranslation } from 'react-i18next'
 
 type Mode = 'mcq' | 'fill' | 'both'
 
 export default function QuizPage() {
+  const { t } = useTranslation()
   const dispatch = useDispatch<AppDispatch>()
   const { user } = useSelector((s: RootState) => s.auth)
 
@@ -169,12 +171,12 @@ export default function QuizPage() {
   }, [libId])
 
   // ======= Helpers =======
-  if (!user) return <Container><P>Hãy đăng nhập để làm quiz.</P></Container>
+  if (!user) return <Container><P>{t('common.loginRequired')}</P></Container>
   if (order.length === 0) {
     return (
       <Container>
         <div className="rounded-2xl border p-6">
-          <P>Chưa có thư viện nào. Hãy tạo thư viện trước.</P>
+          <P>{t('common.noLibraries')}</P>
         </div>
       </Container>
     )
@@ -186,30 +188,30 @@ export default function QuizPage() {
         <div className="flex justify-end">
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="ghost">Tùy chọn</Button>
+              <Button variant="ghost">{t('common.options')}</Button>
             </PopoverTrigger>
             <PopoverContent>
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <Small>Chế độ</Small>
-                  <div className="text-sm">{mode === 'mcq' ? 'Trắc nghiệm' : mode === 'fill' ? 'Điền' : 'Trộn'}</div>
+                  <Small>{t('study.mode')}</Small>
+                  <div className="text-sm">{mode === 'mcq' ? t('study.mcqMode') : mode === 'fill' ? t('study.fillMode') : t('study.bothMode')}</div>
                 </div>
 
                   <div className="flex items-center gap-2">
-                    <Small>Số câu</Small>
+                    <Small>{t('quiz.questionCount')}</Small>
                     <input type="number" min={1} value={count} onChange={(e) => setCount(Math.max(1, Number(e.target.value) || 1))} className="w-24 rounded-xl border px-2 py-1 text-sm" />
-                    <Small className="text-muted-foreground">Có {cards.length} thẻ</Small>
+                    <Small className="text-muted-foreground">{t('quiz.hasCards', { count: cards.length })}</Small>
                 </div>
 
                 <div className="ml-auto flex items-center gap-2">
-                  <Button onClick={startQuiz} disabled={cards.length === 0}>Bắt đầu</Button>
+                  <Button onClick={startQuiz} disabled={cards.length === 0}>{t('quiz.start')}</Button>
                 </div>
               </div>
             </PopoverContent>
           </Popover>
         </div>
         <div className="rounded-2xl border p-6 text-center">
-          <P>Thư viện này chưa có thẻ. Thêm thẻ để bắt đầu quiz.</P>
+          <P>{t('study.libraryHasNoCards')}</P>
         </div>
       </Container>
     )
@@ -229,29 +231,29 @@ export default function QuizPage() {
       <div className="flex justify-end">
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="ghost">Tùy chọn</Button>
+            <Button variant="ghost">{t('common.options')}</Button>
           </PopoverTrigger>
           <PopoverContent>
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <Small>Chế độ</Small>
-                <div className="text-sm">{mode === 'mcq' ? 'Trắc nghiệm' : mode === 'fill' ? 'Điền' : 'Trộn'}</div>
+                <Small>{t('study.mode')}</Small>
+                <div className="text-sm">{mode === 'mcq' ? t('study.mcqMode') : mode === 'fill' ? t('study.fillMode') : t('study.bothMode')}</div>
               </div>
 
               <div className="flex items-center gap-2">
-                <Small>Số câu</Small>
+                <Small>{t('study.questionCount')}</Small>
                 <input type="number" min={1} value={count} onChange={(e) => setCount(Math.max(1, Number(e.target.value) || 1))} className="w-24 rounded-xl border px-2 py-1 text-sm" />
-                <Small className="text-muted-foreground">Có {cards.length} thẻ</Small>
+                <Small className="text-muted-foreground">{t('study.availableCards', { count: cards.length })}</Small>
               </div>
 
               <div className="ml-auto flex items-center gap-2">
                 {!started ? (
-                  <Button onClick={startQuiz} disabled={cards.length === 0}>Bắt đầu</Button>
+                  <Button onClick={startQuiz} disabled={cards.length === 0}>{t('study.startQuiz')}</Button>
                 ) : (
                   <>
-                    <Small className="text-muted-foreground hidden sm:block">Đang làm: {i + 1}/{quizCards.length} · Đúng: {correctCount}</Small>
-                    <Button variant="secondary" onClick={retakeQuiz}>Làm lại</Button>
-                    <Button variant="destructive" onClick={() => { setStarted(false); setQuizCards([]); setI(0); setShow(false) }}>Thoát</Button>
+                    <Small className="text-muted-foreground hidden sm:block">{t('study.quizProgress', { current: i + 1, total: quizCards.length })} · {t('study.correct')}: {correctCount}</Small>
+                    <Button variant="secondary" onClick={retakeQuiz}>{t('study.retakeQuiz')}</Button>
+                    <Button variant="destructive" onClick={() => { setStarted(false); setQuizCards([]); setI(0); setShow(false) }}>{t('common.exit')}</Button>
                   </>
                 )}
               </div>
@@ -264,7 +266,7 @@ export default function QuizPage() {
       {started && (
         <div className="rounded-xl border p-3">
           <div className="flex items-center gap-3 text-sm">
-            <span className="font-medium">Tiến độ</span>
+            <span className="font-medium">{t('study.progress')}</span>
             <div className="relative h-2 flex-1 rounded-full bg-muted overflow-hidden">
               <div
           className="absolute inset-y-0 left-0 bg-primary transition-all"
@@ -273,7 +275,7 @@ export default function QuizPage() {
               />
             </div>
             <span className="tabular-nums">{i + 1}/{quizCards.length}</span>
-        <span className="ml-3 text-muted-foreground">Đúng: {correctCount}</span>
+        <span className="ml-3 text-muted-foreground">{t('study.correct')}: {correctCount}</span>
           </div>
         </div>
       )}
@@ -290,11 +292,11 @@ export default function QuizPage() {
               const locked = mcqResult !== null
               const visual = locked
                 ? (isCorrect
-                    ? 'bg-emerald-50 dark:bg-emerald-900/40 border-emerald-200 dark:border-emerald-700'
-                    : 'bg-red-50 dark:bg-red-900/40 border-red-200 dark:border-red-700')
-                : 'bg-white dark:bg-neutral-800'
+                    ? 'bg-success/10 border-success'
+                    : 'bg-destructive/10 border-destructive')
+                : 'bg-card'
               const textVisual = locked
-                ? (isCorrect ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300')
+                ? (isCorrect ? 'text-success-foreground' : 'text-destructive-foreground')
                 : ''
               return (
                 <Button
@@ -346,7 +348,7 @@ export default function QuizPage() {
             </div>
             {fillResult !== null && (
               <Small className={fillResult ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300'}>
-                {fillResult ? 'Chính xác 🎉' : 'Sai'}
+                {fillResult ? t('study.correct') : t('study.incorrect')}
               </Small>
             )}
             {/* description */}
@@ -371,40 +373,40 @@ export default function QuizPage() {
               goNext()
             }}
           >
-            Tiếp {cardMode === 'fill' ? '(Shift+Enter)' : '(Enter)'}
+            {t('study.next')} {cardMode === 'fill' ? '(Shift+Enter)' : '(Enter)'}
           </Button>
           {cardMode === 'fill' && (
             <Button variant="secondary" onClick={() => setShow(s => !s)}>
-              {show ? 'Ẩn gợi ý' : 'Gợi ý'}
+              {show ? t('study.hideHint') : t('study.showHint')}
             </Button>
           )}
         </div>
       ) : finished ? (
         <div className="rounded-2xl border p-6 space-y-4">
             <div className="text-center space-y-1">
-            <div className="text-2xl font-bold">Hoàn thành 🎉</div>
-            <div className="text-lg">Điểm của bạn: {score10}</div>
+            <div className="text-2xl font-bold">{t('study.quizCompleted')}</div>
+            <div className="text-lg">{t('study.yourScore')}: {score10}</div>
             <div className="flex items-center gap-3 justify-center text-sm text-muted-foreground">
-              <span>Tổng: {quizCards.length}</span>
-              <span>Đúng: {correctCount}</span>
-              <span>Sai: {Math.max(0, quizCards.length - correctCount)}</span>
+              <span>{t('study.total')}: {quizCards.length}</span>
+              <span>{t('study.correct')}: {correctCount}</span>
+              <span>{t('study.incorrect')}: {Math.max(0, quizCards.length - correctCount)}</span>
             </div>
-            <div className="mt-2 h-2 rounded-full bg-gray-200 overflow-hidden">
+            <div className="mt-2 h-2 rounded-full bg-muted overflow-hidden">
               <div
-                className="h-full bg-emerald-500 transition-all"
+                className="h-full bg-success transition-all"
                 style={{ width: `${Math.round((correctCount / Math.max(1, quizCards.length)) * 100)}%` }}
               />
             </div>
           </div>
 
           <div className="text-left">
-            <div className="text-sm text-gray-600 mb-2">Đáp án các câu:</div>
+            <div className="text-sm text-muted-foreground mb-2">{t('study.answers')}:</div>
             <QuizAnswers cards={quizCards} />
           </div>
 
           <div className="flex gap-2 justify-center">
-            <Button onClick={retakeQuiz}>Làm lại</Button>
-            <Button variant="secondary" onClick={() => { setFinished(false); setQuizCards([]); setI(0); setCorrectCount(0) }}>Quay lại</Button>
+            <Button onClick={retakeQuiz}>{t('study.retakeQuiz')}</Button>
+            <Button variant="secondary" onClick={() => { setFinished(false); setQuizCards([]); setI(0); setCorrectCount(0) }}>{t('study.backToStudy')}</Button>
           </div>
         </div>
       ) : null}
