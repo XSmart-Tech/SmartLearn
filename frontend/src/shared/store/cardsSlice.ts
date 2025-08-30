@@ -41,6 +41,36 @@ export const createCard = createAsyncThunk<Flashcard, CreateCardArg>(
   }
 )
 
+type CreateCardsBulkArg = { libraryId: string; cards: Omit<Flashcard, 'id' | 'createdAt' | 'updatedAt'>[] }
+export const createCardsBulk = createAsyncThunk<Flashcard[], CreateCardsBulkArg>(
+  'cards/createBulk',
+  async (payload: CreateCardsBulkArg) => {
+    const now = Date.now()
+    const createdCards: Flashcard[] = []
+    
+    toast.loading('Đang thêm thẻ...', { id: 'bulk-add' })
+    
+    for (const card of payload.cards) {
+      const docRef = await addDoc(collection(db, 'cards'), {
+        ...card,
+        libraryId: payload.libraryId,
+        createdAt: now,
+        updatedAt: now,
+      })
+      createdCards.push({
+        id: docRef.id,
+        ...card,
+        libraryId: payload.libraryId,
+        createdAt: now,
+        updatedAt: now,
+      } as Flashcard)
+    }
+    
+    toast.success(`Đã thêm ${createdCards.length} thẻ thành công`, { id: 'bulk-add' })
+    return createdCards
+  }
+)
+
 type UpdateCardArg = { id: string; patch: Partial<Flashcard> }
 export const updateCard = createAsyncThunk<UpdateCardArg, UpdateCardArg>(
   'cards/update',
@@ -117,6 +147,22 @@ const cardsSlice = createSlice({
 
     b.addCase(createCard.rejected, (_s, a) => {
       toast.error(a.error?.message ?? 'Không thể tạo thẻ')
+    })
+
+    b.addCase(createCardsBulk.fulfilled, (s, a) => {
+      const libId = a.payload[0]?.libraryId
+      if (libId) {
+        if (!s.byLib[libId]) s.byLib[libId] = []
+        // Add all new cards to the beginning of the array
+        s.byLib[libId].unshift(...a.payload)
+        for (const card of a.payload) {
+          s.cardToLib[card.id] = libId
+        }
+      }
+    })
+
+    b.addCase(createCardsBulk.rejected, (_s, a) => {
+      toast.error(a.error?.message ?? 'Không thể thêm thẻ', { id: 'bulk-add' })
     })
 
     b.addCase(updateCard.fulfilled, (s, a) => {

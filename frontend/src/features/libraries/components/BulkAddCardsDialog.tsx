@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import type { AppDispatch, RootState } from '@/shared/store'
 import type { Flashcard } from '@/shared/lib/types'
-import { createCard } from '@/shared/store/cardsSlice'
+import { createCardsBulk } from '@/shared/store/cardsSlice'
 import { createNotification } from '@/shared/store/notificationsSlice'
 import {
     Button,
@@ -78,9 +78,7 @@ export default function BulkAddCardsDialog({ libraryId, trigger }: BulkAddCardsD
 
             if (isOwner) {
                 // Owner có thể thêm trực tiếp
-                cards.forEach(card => {
-                    dispatch(createCard({ libraryId, card }))
-                })
+                dispatch(createCardsBulk({ libraryId, cards }))
                 setText('')
                 setError('')
                 setOpen(false)
@@ -127,7 +125,7 @@ export default function BulkAddCardsDialog({ libraryId, trigger }: BulkAddCardsD
                     <Plus className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" /> <span className="hidden xs:inline">Thêm nhiều thẻ</span>
                 </Button>
             )}
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Thêm nhiều thẻ</DialogTitle>
                     <DialogDescription>
@@ -159,7 +157,7 @@ Câu hỏi 3|Trả lời 3|Mô tả khác`}
                     )}
                 </div>
 
-                <DialogFooter>
+                <DialogFooter className="sticky bottom-0 bg-background border-t">
                     <Button variant="secondary" onClick={() => handleOpenChange(false)}>
                         Hủy
                     </Button>

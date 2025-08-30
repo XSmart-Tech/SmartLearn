@@ -1,13 +1,6 @@
 import React from 'react'
 import { cn } from '@/shared/lib/utils'
 
-// Generic memoized component wrapper
-export function memoComponent<P extends object>(
-  Component: React.ComponentType<P>,
-  propsAreEqual?: (prevProps: P, nextProps: P) => boolean
-) {
-  return React.memo(Component, propsAreEqual)
-}
 
 // Memoized button component
 interface MemoButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {

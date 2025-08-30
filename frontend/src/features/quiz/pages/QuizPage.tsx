@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import type { RootState, AppDispatch } from '@/shared/store'
 import { fetchCards } from '@/shared/store/cardsSlice'
 // import { fetchLibraries } from '@/shared/store/librariesSlice'
-import { Button, P, Small, Large, Popover, PopoverTrigger, PopoverContent, Container } from '@/shared/ui'
+import { Button, P, Small, Large, Popover, PopoverTrigger, PopoverContent, Container, Badge } from '@/shared/ui'
 import { getRecentLibraryIds, addRecentLibrary } from '@/shared/lib/recent'
 import QuizAnswers from '@/features/study/components/QuizAnswers'
 import { useTranslation } from 'react-i18next'
@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next'
 type Mode = 'mcq' | 'fill' | 'both'
 
 export default function QuizPage() {
-  const { t } = useTranslation()
+  const { t } = useTranslation('translation')
   const dispatch = useDispatch<AppDispatch>()
   const { user } = useSelector((s: RootState) => s.auth)
 
@@ -73,6 +73,7 @@ export default function QuizPage() {
   const [started, setStarted] = useState(false)
   const [quizCards, setQuizCards] = useState<typeof cards>([])
   const [mcqResult, setMcqResult] = useState<boolean | null>(null)
+  const [selectedChoice, setSelectedChoice] = useState<string | null>(null)
   const [input, setInput] = useState('')
   const [fillResult, setFillResult] = useState<boolean | null>(null)
   const [correctCount, setCorrectCount] = useState(0)
@@ -111,6 +112,7 @@ export default function QuizPage() {
     setI(0)
     setShow(false)
     setMcqResult(null)
+    setSelectedChoice(null)
     setFillResult(null)
     setInput('')
     setCorrectCount(0)
@@ -119,7 +121,7 @@ export default function QuizPage() {
   }
 
   const goNext = () => {
-    setShow(false); setMcqResult(null); setFillResult(null); setInput('')
+    setShow(false); setMcqResult(null); setSelectedChoice(null); setFillResult(null); setInput('')
     setI(prev => {
       if (prev < (quizCards.length - 1)) return prev + 1
       setStarted(false)
@@ -166,6 +168,7 @@ export default function QuizPage() {
     setFinished(false)
     setCorrectCount(0)
     setMcqResult(null)
+    setSelectedChoice(null)
     setFillResult(null)
     setInput('')
   }, [libId])
@@ -289,14 +292,15 @@ export default function QuizPage() {
           <div className="mt-6 grid gap-3 grid-cols-1 sm:grid-cols-2">
             {choices.map((c, idx) => {
               const isCorrect = c.trim() === card.back.trim()
+              const isSelected = c.trim() === selectedChoice?.trim()
               const locked = mcqResult !== null
               const visual = locked
                 ? (isCorrect
-                    ? 'bg-success/10 border-success'
-                    : 'bg-destructive/10 border-destructive')
+                    ? 'bg-green-100 dark:bg-green-900/30 border-green-500 shadow-md'
+                    : (isSelected ? 'bg-red-100 dark:bg-red-900/30 border-red-500' : 'bg-card/50 border-muted'))
                 : 'bg-card'
               const textVisual = locked
-                ? (isCorrect ? 'text-success-foreground' : 'text-destructive-foreground')
+                ? (isCorrect ? 'text-green-800 dark:text-green-200' : (isSelected ? 'text-red-800 dark:text-red-200' : 'text-muted-foreground'))
                 : ''
               return (
                 <Button
@@ -307,20 +311,25 @@ export default function QuizPage() {
                   aria-pressed={locked && isCorrect}
                   onClick={() => {
                     if (mcqResult !== null) return
+                    setSelectedChoice(c)
                     const ok = isCorrect
                     setMcqResult(ok)
                     if (ok) setCorrectCount(n => n + 1)
                   }}
                 >
-                  <span className="mr-2 rounded-md border px-2 py-0.5 text-xs tabular-nums bg-white/90 dark:bg-neutral-900/60">{idx + 1}</span>
+                  <span className={`mr-2 rounded-md border px-2 py-0.5 text-xs tabular-nums ${locked ? (isCorrect ? 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200 border-green-300' : (isSelected ? 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200 border-red-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-300')) : 'bg-white/90 dark:bg-neutral-900/60'}`}>{idx + 1}</span>
                   {c}
                 </Button>
               )
             })}
             {mcqResult !== null && (
-                <Small className={mcqResult ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300'}>
-                {mcqResult ? 'Chính xác 🎉' : `Sai — đáp án đúng: ${card.back}`}
-              </Small>
+                <Badge variant={mcqResult ? "default" : "destructive"} className="mt-2">
+                {mcqResult ? t('study.correctAnswer') : t('study.wrongAnswer', { answer: `số ${(() => {
+                  const normalizedBack = card.back.replace(/\s+/g, ' ').trim();
+                  const index = choices.findIndex(c => c.replace(/\s+/g, ' ').trim() === normalizedBack);
+                  return index >= 0 ? index + 1 : '?';
+                })()}` })}
+              </Badge>
             )}
           </div>
         ) : (
@@ -328,34 +337,52 @@ export default function QuizPage() {
             <input
               value={input}
               onChange={(e) => setInput((e.target as HTMLInputElement).value)}
-              className="w-full rounded-xl border px-3 py-2 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/40"
-              placeholder="Nhập đáp án"
-              aria-label="Nhập đáp án"
-            />
-            <div className="flex gap-2 justify-center">
-              <Button
-                onClick={() => {
-                  if (fillResult !== null) return
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !fillResult) {
                   const norm = (s: string) => s.replace(/\s+/g, ' ').trim().toLowerCase()
                   const ok = norm(input) === norm(card.back)
                   setFillResult(ok)
-                  if (ok) setCorrectCount(n => n + 1)
-                  setShow(true)
+                  if (ok) {
+                    setCorrectCount(n => n + 1)
+                    setTimeout(() => goNext(), 1500)
+                  } else {
+                    setShow(true)
+                  }
+                }
+              }}
+              disabled={fillResult === true}
+              className="w-full rounded-xl border px-3 py-2 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/40"
+              placeholder={t('study.answerPlaceholder')}
+              aria-label={t('study.answerAriaLabel')}
+            />
+            <div className="flex gap-2 justify-center">
+              <Button
+                disabled={fillResult === true}
+                onClick={() => {
+                  const norm = (s: string) => s.replace(/\s+/g, ' ').trim().toLowerCase()
+                  const ok = norm(input) === norm(card.back)
+                  setFillResult(ok)
+                  if (ok) {
+                    setCorrectCount(n => n + 1)
+                    setTimeout(() => goNext(), 1500)
+                  } else {
+                    setShow(true)
+                  }
                 }}
               >
-                Kiểm tra (Enter)
+                {t('study.checkAnswer')}
               </Button>
             </div>
             {fillResult !== null && (
-              <Small className={fillResult ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300'}>
-                {fillResult ? t('study.correct') : t('study.incorrect')}
-              </Small>
+              <Badge variant={fillResult ? "default" : "destructive"} className="mt-2">
+                {fillResult ? t('study.correctAnswer') : t('study.wrongAnswer', { answer: card.back })}
+              </Badge>
             )}
             {/* description */}
             {(show) && (
               <div className="mt-1">
                 <Small className="text-muted-foreground">
-                  {card.description ?? maskAnswer(card.back)}
+                  {fillResult === false ? card.back : (card.description ?? maskAnswer(card.back))}
                 </Small>
               </div>
             )}
